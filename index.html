@@ -198,6 +198,9 @@ body.noinfo .info { margin-right: -340px; }
 (function () {
   "use strict";
   const FORM = "https://forms.yandex.ru/u/6adce23549af472adc264928/";
+  // Версия сборки: при выкладке подставляется дата, чтобы браузер не показывал старые макеты из кэша.
+  const V = "20261024204757";
+  const u = (x) => x + (x.includes("?") ? "&" : "?") + "v=" + V;
   const D = [
     { k: "A", f: "a_console.html", t: "Эфирный пульт", g: 1, short: "Как сейчас, но аккуратнее: предпросмотр → кнопки → экран",
       d: "Развитие текущей панели. Предпросмотр, кнопки и экран проектора стоят в ряд, как на видеомикшере; лента номеров снизу; по бокам две колонки с вкладками.",
@@ -284,7 +287,7 @@ body.noinfo .info { margin-right: -340px; }
     : x.about ? `<button class="sec" data-go="${x.name}" title="${x.about.title}: для чего это">${x.about.nav}</button>`
     : `<button data-go="${x.name}" title="${x.d.t}"><b>${x.d.k}</b>${x.d.t}</button>`).join("");
   const tiles = (g) => D.filter((d) => d.g === g).map((d) => `<button class="tile" data-go="${d.k.toLowerCase()}">
-      <div class="th"><iframe src="${d.thumb || d.f}" loading="lazy" tabindex="-1" title="${d.t}"></iframe></div>
+      <div class="th"><iframe src="${u(d.thumb || d.f)}" loading="lazy" tabindex="-1" title="${d.t}"></iframe></div>
       <div class="tx"><b><i>${d.k}</i>${d.t}</b><span>${d.short}</span></div></button>`).join("");
   $("#groups").innerHTML = `<h2>Разный стиль</h2><p>Различаются цветом и характером.</p><div class="tiles">${tiles(1)}</div>
     <h2>Разное расположение</h2><p>Один цвет — сравниваются только расположение и способ прятать панели.</p><div class="tiles">${tiles(2)}</div>
@@ -323,16 +326,16 @@ body.noinfo .info { margin-right: -340px; }
         <h4 class="p">Плюсы</h4><ul>${d.p.map((x) => `<li>${x}</li>`).join("")}</ul>
         <h4 class="m">Минусы</h4><ul>${d.m.map((x) => `<li>${x}</li>`).join("")}</ul>
         ${d.g <= 2 ? `<h4 class="t">Везде одинаково</h4><p><kbd>Space</kbd> пуск/пауза · <kbd>N</kbd> следующий · <kbd>B</kbd> заставка · <kbd>Shift</kbd>+<kbd>S</kbd> стоп. Сначала кликните по макету.</p>` : ""}
-        <p class="open"><a href="${d.f}" target="_blank" rel="noopener">Открыть ${d.dev ? "в отдельной вкладке" : "макет на весь экран"} ↗</a></p>`;
+        <p class="open"><a href="${u(d.f)}" target="_blank" rel="noopener">Открыть ${d.dev ? "в отдельной вкладке" : "макет на весь экран"} ↗</a></p>`;
       if (d.dev) {
         $("#s-device").classList.add("on");
-        if (!$("#fPC").src.endsWith(d.f)) { $("#fPC").src = d.f; $("#fPh").src = d.f; }
+        if (!$("#fPC").src.endsWith(u(d.f))) { $("#fPC").src = u(d.f); $("#fPh").src = u(d.f); }
         $("#dUrl").textContent = d.g === 5 ? "festmon.ru/helper" : "festmon.ru/program";
         $("#info2").innerHTML = info;
         fitDev();
       } else {
         $("#s-design").classList.add("on");
-        if (!$("#frame").src.endsWith(d.f)) $("#frame").src = d.f;
+        if (!$("#frame").src.endsWith(u(d.f))) $("#frame").src = u(d.f);
         $("#info").innerHTML = info;
         fit();
       }

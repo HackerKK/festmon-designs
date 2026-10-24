@@ -125,7 +125,10 @@ h4 { margin: 0 0 10px; font-size: 12px; letter-spacing: .12em; text-transform: u
 .req .stt { grid-row: 1 / 3; grid-column: 2; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
 .stt.wait { background: rgba(255,213,79,.15); color: var(--warn); }
 .stt.ok { background: rgba(61,220,132,.15); color: var(--ok); }
-.q .mvb { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: none; cursor: pointer; font-size: 13px; margin-left: 4px; }
+.q .acts { display: flex; flex-direction: column; gap: 6px; }
+.q .mvb { padding: 8px 12px; border-radius: 10px; border: 1px solid var(--next); color: #bfe0ff; background: rgba(77,163,255,.1); cursor: pointer; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.prepacts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.prepacts button { padding: 12px; border-radius: 12px; border: 1px solid var(--next); background: rgba(77,163,255,.1); color: #bfe0ff; font-weight: 700; cursor: pointer; }
 .toast { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 20px); opacity: 0; background: #fff; color: #000; padding: 10px 16px; border-radius: 12px; font-weight: 700; transition: .25s; z-index: 50; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 </style>
@@ -154,7 +157,7 @@ h4 { margin: 0 0 10px; font-size: 12px; letter-spacing: .12em; text-transform: u
 <nav class="tabbar"><button class="on" data-mt="prep"><i>🎭</i>Готовим</button><button data-mt="queue"><i>☰</i>Очередь и заявки<span class="bd">1</span></button></nav>
 <div class="toast" id="toast"></div>
 
-<script src="assets/common.js"></script>
+<script src="assets/common.js?v=20261024204757"></script>
 <script>
 (function () {
   const { PROGRAM, state, mmss, cover } = FM;
@@ -183,7 +186,8 @@ h4 { margin: 0 0 10px; font-size: 12px; letter-spacing: .12em; text-transform: u
       <div class="sec"><h5>💡 Свет</h5><div class="light">${esc(r.light || "обычный")}</div></div>
       ${r.wish ? `<div class="sec"><h5>⚠ Особые пожелания</h5><div class="wish">${esc(r.wish)}</div></div>` : ""}
       <button class="ready ${ready[p.n] ? "go" : ""}" id="ready" ${all || ready[p.n] ? "" : "disabled"}>${ready[p.n] ? "✓ Пульт знает: готовы к выходу" : all ? "Готовы к выходу → сообщить пульту" : "Отметьте всё, чтобы сообщить о готовности"}</button>
-      <div class="prog">${done} из ${its.length} готово</div>`;
+      <div class="prog">${done} из ${its.length} готово</div>
+      <div class="prepacts"><button data-mv="${p.n}">⇅ Перенести номер</button><button data-goq>☰ Очередь и заявки</button></div>`;
   }
   function renderQueue() {
     const ni = FM.nextIdx(), list = PROGRAM.slice(ni + 1, ni + 6);
@@ -192,7 +196,7 @@ h4 { margin: 0 0 10px; font-size: 12px; letter-spacing: .12em; text-transform: u
       const its = items(p), d = its.filter((x) => ck[p.n + x.k]).length;
       return `<div class="q"><span class="n">${p.n || "—"}</span><div><b>${esc(p.title)}</b><span>${p.kind === "break" ? "антракт 15 мин" : esc(p.sub)}</span>
         ${p.kind === "break" ? "" : `<div class="dots"><i class="${called[p.n] ? "ok" : "no"}">${called[p.n] ? "вызваны" : "не вызваны"}</i><i class="${d === its.length ? "ok" : ""}">реквизит ${d}/${its.length}</i></div>`}</div>
-        ${p.kind === "break" ? "<span></span>" : `<span style="white-space:nowrap"><button class="call ${called[p.n] ? "on" : ""}" data-call="${p.n}">${called[p.n] ? "✓ вызваны" : "📣 Вызвать"}</button><button class="mvb" data-mv="${p.n}" title="Заявка на перенос">⇅</button></span>`}</div>`;
+        ${p.kind === "break" ? "<span></span>" : `<span class="acts"><button class="call ${called[p.n] ? "on" : ""}" data-call="${p.n}">${called[p.n] ? "✓ вызваны" : "📣 Вызвать"}</button><button class="mvb" data-mv="${p.n}">⇅ Перенести</button></span>`}</div>`;
     }).join("");
   }
   // ---------- ⛔ остановить номер: только уведомление на пульт ----------
@@ -245,7 +249,8 @@ h4 { margin: 0 0 10px; font-size: 12px; letter-spacing: .12em; text-transform: u
   document.addEventListener("click", (e) => {
     if (e.target.closest("#mvOpen")) { mvOpen = true; mvPre = null; renderMv(); }
     if (e.target.closest("#mvCancel")) { mvOpen = false; renderMv(); }
-    const b = e.target.closest("[data-mv]"); if (b) { mvOpen = true; mvPre = b.dataset.mv; renderMv(); $("#mvCard").scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+    const b = e.target.closest("[data-mv]"); if (b) { mvOpen = true; mvPre = b.dataset.mv; renderMv();
+      const q = document.querySelector('[data-mt="queue"]'); if (q && getComputedStyle(q.parentElement).display !== "none" && !q.classList.contains("on")) q.click(); $("#mvCard").scrollIntoView({ block: "nearest", behavior: "smooth" }); }
     if (e.target.closest("#mvSend")) {
       const what = $("#mvWhat").value, how = $("#mvHow").value, to = $("#mvTo").value.split(" ")[0];
       if (!/конец|снять/.test(how) && to === what) { toast("Выберите другой номер"); return; }
@@ -264,6 +269,7 @@ h4 { margin: 0 0 10px; font-size: 12px; letter-spacing: .12em; text-transform: u
     const r = e.target.closest("#ready"); if (r && !r.disabled) { const p = PROGRAM[FM.nextIdx()]; ready[p.n] = true; save(); renderPrep(); toast("Пульт получил: " + p.n + " готовы к выходу"); }
     const k = e.target.closest("[data-call]"); if (k) { called[k.dataset.call] = !called[k.dataset.call]; save(); renderQueue(); if (called[k.dataset.call]) toast("Объявлено в закулисье: " + k.dataset.call + " — подойти к сцене"); }
     const m = e.target.closest("[data-say]"); if (m) { MSGS.push({ who: "Вы", t: m.dataset.say, ago: "сейчас", me: true }); renderMsgs(); toast("Отправлено на пульт"); }
+    if (e.target.closest("[data-goq]")) { const q = document.querySelector('[data-mt="queue"]'); if (q && getComputedStyle(q.parentElement).display !== "none") q.click(); $("#mvCard").scrollIntoView({ block: "nearest", behavior: "smooth" }); }
     const t = e.target.closest("[data-mt]"); if (t) { document.querySelectorAll("[data-mt]").forEach((x) => x.classList.toggle("on", x === t)); document.querySelectorAll(".col[data-tab]").forEach((c2) => c2.classList.toggle("on", c2.dataset.tab === t.dataset.mt)); }
   });
 
