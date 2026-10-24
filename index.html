@@ -20,7 +20,7 @@ a { color: var(--accent); }
 .nav { display: flex; gap: 4px; overflow-x: auto; flex: 1; min-width: 0; scrollbar-width: none; }
 .nav::-webkit-scrollbar { display: none; }
 .nav button { flex: none; height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 7px; }
-.nav button b { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 5px; background: var(--card2); font-size: 12px; }
+.nav button b { display: inline-grid; place-items: center; min-width: 20px; padding: 0 4px; height: 20px; border-radius: 5px; background: var(--card2); font-size: 12px; }
 .nav button:hover { border-color: #4a4f5d; }
 .nav button.on { border-color: var(--accent); background: #12302d; }
 .nav button.on b { background: var(--accent); color: var(--accent-fg); }
@@ -90,9 +90,27 @@ body.noinfo .info { margin-right: -340px; }
 .vsub { color: var(--dim); margin: 0 0 10px; font-size: 14px; }
 .vote-list { margin-top: 6px !important; }
 .formbox { background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); }
-.formbox iframe { width: 100%; height: 1300px; border: 0; display: block; }
+.formbox iframe { width: 100%; height: 1950px; border: 0; display: block; }
 .formnote { color: var(--dim); font-size: 13px; margin-top: 10px; }
 
+/* слайд «ПК + телефон» */
+.dview { flex: 1; min-width: 0; display: flex; flex-direction: column; background: radial-gradient(900px 500px at 50% 0%, #1b1e2a, #0b0c10); }
+.dtools { flex: none; display: flex; gap: 6px; justify-content: center; padding: 10px; }
+.dtools button { height: 32px; padding: 0 14px; border-radius: 99px; border: 1px solid var(--border); background: var(--card); cursor: pointer; font-size: 13px; }
+.dtools button.on { border-color: var(--accent); color: var(--accent); background: #12302d; }
+.devs { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 28px; padding: 0 16px 16px; }
+.dev { flex: none; position: relative; }
+.dev .lbl { position: absolute; left: 0; right: 0; bottom: -22px; text-align: center; font-size: 12px; color: var(--dim); }
+.laptop { background: #2a2d36; border-radius: 12px 12px 4px 4px; box-shadow: 0 30px 60px rgba(0,0,0,.5); }
+.laptop .lbar { height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 10px; background: #1d1f26; border-radius: 12px 12px 0 0; }
+.laptop .lbar i { width: 10px; height: 10px; border-radius: 50%; background: #444955; }
+.laptop .lbar span { flex: 1; margin-left: 10px; height: 18px; border-radius: 6px; background: #2a2d36; color: var(--dim); font-size: 11px; line-height: 18px; padding: 0 10px; overflow: hidden; white-space: nowrap; }
+.screen { position: relative; overflow: hidden; background: #fff; }
+.screen iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; }
+.phone { background: #0d0e12; border-radius: 44px; padding: 12px; box-shadow: 0 30px 60px rgba(0,0,0,.5), inset 0 0 0 2px #2c2f39; }
+.phone .screen { border-radius: 32px; }
+.phone .notch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 34%; height: 22px; background: #0d0e12; border-radius: 0 0 14px 14px; z-index: 2; }
+.devs.m-pc .phone, .devs.m-ph .laptop { display: none; }
 @media (max-width: 900px) {
   .info { position: absolute; right: 0; top: 0; bottom: 0; z-index: 5; width: min(340px, 88vw); box-shadow: -20px 0 40px rgba(0,0,0,.5); }
   body.noinfo .info { margin-right: calc(-1 * min(340px, 88vw)); }
@@ -113,11 +131,11 @@ body.noinfo .info { margin-right: -340px; }
   <section class="slide page" id="s-intro"><div class="inner">
     <div class="hero">
       <h1>Панель оператора <span>FestMon</span>: выберите дизайн</h1>
-      <p>FestMon ведёт программу фестиваля: оператор запускает номера, выводит видео и картинки на проектор и управляет звуком. Здесь 7 вариантов того, как может выглядеть его пульт.</p>
+      <p>FestMon ведёт программу фестиваля: оператор запускает номера, выводит видео и картинки на проектор и управляет звуком. Здесь варианты его пульта, а отдельно — экран проектора, сайт с программой для зрителей и окно помощника за кулисами.</p>
       <p>Это интерактивные макеты: всё нажимается и переключается, но данные фейковые и ничего по-настоящему не запускается.</p>
     </div>
     <div class="how">
-      <div><b>① Пролистайте варианты</b><span>Кнопки A–G сверху или стрелки ‹ ›. Удобнее всего на компьютере, на телефоне макет уменьшится.</span></div>
+      <div><b>① Пролистайте варианты</b><span>Кнопки сверху или стрелки ‹ ›. Сайт и окно помощника показаны сразу как на ПК и как на телефоне.</span></div>
       <div><b>② Потрогайте</b><span>Нажимайте «Пуск», «Следующий», открывайте и прячьте панели. Подсказки — по кнопке ℹ.</span></div>
       <div><b>③ Проголосуйте</b><span>Последний слайд — короткая форма: что понравилось больше и почему.</span></div>
     </div>
@@ -128,6 +146,17 @@ body.noinfo .info { margin-right: -340px; }
   <section class="slide design" id="s-design">
     <div class="view" id="view"><iframe id="frame" title="Макет"></iframe><div class="scaled" id="scaled"></div></div>
     <aside class="info" id="info"></aside>
+  </section>
+
+  <section class="slide design" id="s-device">
+    <div class="dview">
+      <div class="dtools" id="dtools"><button data-dm="both" class="on">ПК и телефон</button><button data-dm="pc">Только ПК</button><button data-dm="ph">Только телефон</button></div>
+      <div class="devs" id="devs">
+        <div class="dev laptop"><div class="lbar"><i></i><i></i><i></i><span id="dUrl">festmon.ru</span></div><div class="screen" id="scrPC"><iframe id="fPC" title="Как на ПК"></iframe></div><div class="lbl">ПК · 1366×854</div></div>
+        <div class="dev phone"><div class="notch"></div><div class="screen" id="scrPh"><iframe id="fPh" title="Как на телефоне"></iframe></div><div class="lbl">Телефон · 390×844</div></div>
+      </div>
+    </div>
+    <aside class="info" id="info2"></aside>
   </section>
 
   <section class="slide page" id="s-vote"><div class="inner">
@@ -178,6 +207,26 @@ body.noinfo .info { margin-right: -340px; }
       d: "Экран поделён пополам: слева только эфир (проектор, отсчёт, кнопки, звук), справа подготовка (предпросмотр и вкладки: программа карточками, инспектор, файлы…).",
       h: "Вкладки справа, <kbd>Shift</kbd>+клик — вторая вкладка снизу, разделитель тянется, режимы <kbd>Ctrl</kbd>+<kbd>←</kbd> только эфир / <kbd>Ctrl</kbd>+<kbd>→</kbd> подготовка.",
       p: ["Чёткая граница «в эфире» / «готовлю»", "Перед эфиром убрать лишнее — одна клавиша"], m: ["В режиме «поровну» тесновато", "Предпросмотр далеко от экрана эфира"] },
+    { k: "P", f: "p_projector.html", t: "Экран проектора", g: 3, short: "Что видит зал: номер, заставка, реклама, таймер, QR",
+      d: "Что показывается на проекторе. Сцены: номер с плашкой названия, заставка, реклама партнёров, антракт с большим таймером, QR-голосование, «Спасибо!» после номера, отсчёт до начала. Поверх любой сцены — слои.",
+      hl: "Что попробовать", h: "Сцены <kbd>1</kbd>–<kbd>7</kbd>; слои — логотип, часы, бегущая строка, QR в углу, окно в окне (камера), виньетка — <kbd>Q</kbd>–<kbd>U</kbd>; переход, эффект (искры, снег, конфетти), «Автопоказ», <kbd>H</kbd> прячет пульт, <kbd>F</kbd> — весь экран.",
+      p: ["Видно всё, что может пойти на экран", "QR-код настоящий — ведёт на голосование"], m: ["Набор сцен — пример, его можно менять"] },
+    { k: "S1", f: "s1_afisha.html", t: "Сайт: Афиша", g: 4, dev: 1, short: "Тёмный, фестивальный: «Сейчас» сбоку, программа с фильтрами",
+      d: "Сайт программы для зрителей. На ПК слева закреплены «Сейчас на сцене» и «Далее», справа программа по блокам с временем, поиском и фильтром по номинациям; ★ — напомнить о номере. На телефоне «Сейчас» остаётся липкой полосой сверху.",
+      hl: "Что попробовать", h: "Фильтры номинаций, поиск, звёздочка и «★ Мои». Прогресс идущего номера обновляется сам.",
+      p: ["Всё видно сразу, удобно искать свой номер", "Знакомый вид «афиши»"], m: ["На телефоне длинная лента"] },
+    { k: "S2", f: "s2_tablo.html", t: "Сайт: Табло", g: 4, dev: 1, short: "Светлый и строгий, как табло вокзала",
+      d: "Светлый сайт: чёрная полоса «Сейчас / Следующий» на всю ширину, ниже вкладки блоков и сетка карточек с крупным временем. На телефоне карточки в одну колонку.",
+      hl: "Что попробовать", h: "Вкладки «Блок 1 / Блок 2 / Вся программа».",
+      p: ["Лучше всего читается при ярком свете", "Крупное время у каждого номера"], m: ["Менее «праздничный»", "Нет поиска и избранного"] },
+    { k: "S3", f: "s3_stories.html", t: "Сайт: Сторис", g: 4, dev: 1, short: "Как приложение: кружки номеров, карусель, нижнее меню",
+      d: "Сначала для телефона: сверху кружки номеров (как сторис), крупная карточка «Сейчас» с ♡, карусель «Далее» с «через N мин», нижнее меню. На ПК — меню слева и колонка голосования справа.",
+      hl: "Что попробовать", h: "Листайте кружки и карусель, нажмите ♡ и «Голосовать».",
+      p: ["Привычно для телефона, удобно одной рукой", "Сразу видно, сколько ждать"], m: ["На ПК много пустого места", "Яркий фон может мешать читать"] },
+    { k: "H", f: "h_helper.html", t: "Окно помощника", g: 5, dev: 1, short: "Закулисье: кого готовить, что вынести, связь с пультом",
+      d: "Для помощника за кулисами. «Сейчас на сцене» с отсчётом и крупная карточка «Готовим следующий»: выход через N, чек-лист (участники, реквизит, микрофон), свет, особые пожелания и кнопка «Готовы к выходу». Очередь с кнопкой «Вызвать» и быстрые сообщения на пульт.",
+      hl: "Что попробовать", h: "Отметьте пункты чек-листа — кнопка «Готовы» станет активной. «📣 Вызвать» в очереди, быстрые ответы пульту. На телефоне разделы переключаются внизу.",
+      p: ["Помощник видит только своё", "Пульт сразу знает, что номер готов"], m: ["Нужен телефон у помощника", "Сеть за кулисами должна быть стабильной"] },
   ];
   const SLIDES = ["intro", ...D.map((d) => d.k.toLowerCase()), "vote"];
   let cur = 0;
@@ -191,7 +240,10 @@ body.noinfo .info { margin-right: -340px; }
       <div class="th"><iframe src="${d.f}" loading="lazy" tabindex="-1" title="${d.t}"></iframe></div>
       <div class="tx"><b><i>${d.k}</i>${d.t}</b><span>${d.short}</span></div></button>`).join("");
   $("#groups").innerHTML = `<h2>Разный стиль</h2><p>Различаются цветом и характером.</p><div class="tiles">${tiles(1)}</div>
-    <h2>Разное расположение</h2><p>Один цвет — сравниваются только расположение и способ прятать панели.</p><div class="tiles">${tiles(2)}</div>`;
+    <h2>Разное расположение</h2><p>Один цвет — сравниваются только расположение и способ прятать панели.</p><div class="tiles">${tiles(2)}</div>
+    <h2>Экран проектора</h2><p>Что видит зал: сцены, слои, эффекты.</p><div class="tiles">${tiles(3)}</div>
+    <h2>Сайт с программой для зрителей</h2><p>Три варианта. На слайде каждый показан сразу на ПК и на телефоне.</p><div class="tiles">${tiles(4)}</div>
+    <h2>Окно помощника</h2><p>Для закулисья — тоже на ПК и на телефоне.</p><div class="tiles">${tiles(5)}</div>`;
   $("#voteList").innerHTML = D.map((d, i) => `<button data-go="${i + 1}"><b>${d.k} · ${d.t}</b><span>↩ открыть макет</span></button>`).join("");
 
   function go(i) {
@@ -209,15 +261,25 @@ body.noinfo .info { margin-right: -340px; }
       if (!$("#form").src) { $("#form").src = FORM + "?iframe=1"; $("#formLink").href = FORM; }
     } else {
       const d = D[i - 1];
-      $("#s-design").classList.add("on");
-      if (!$("#frame").src.endsWith(d.f)) $("#frame").src = d.f;
-      $("#info").innerHTML = `<h2><i>${d.k}</i>${d.t}</h2><span class="tag">${d.g === 1 ? "разный стиль" : "разное расположение"}</span>
-        <p>${d.d}</p><h4 class="t">Как прятать панели</h4><p>${d.h}</p>
+      const tag = { 1: "пульт · разный стиль", 2: "пульт · разное расположение", 3: "экран проектора", 4: "сайт для зрителей", 5: "закулисье" }[d.g];
+      const info = `<h2><i>${d.k}</i>${d.t}</h2><span class="tag">${tag}</span>
+        <p>${d.d}</p><h4 class="t">${d.hl || "Как прятать панели"}</h4><p>${d.h}</p>
         <h4 class="p">Плюсы</h4><ul>${d.p.map((x) => `<li>${x}</li>`).join("")}</ul>
         <h4 class="m">Минусы</h4><ul>${d.m.map((x) => `<li>${x}</li>`).join("")}</ul>
-        <h4 class="t">Везде одинаково</h4><p><kbd>Space</kbd> пуск/пауза · <kbd>N</kbd> следующий · <kbd>B</kbd> заставка · <kbd>Shift</kbd>+<kbd>S</kbd> стоп. Сначала кликните по макету.</p>
-        <p class="open"><a href="${d.f}" target="_blank" rel="noopener">Открыть макет на весь экран ↗</a></p>`;
-      fit();
+        ${d.g <= 2 ? `<h4 class="t">Везде одинаково</h4><p><kbd>Space</kbd> пуск/пауза · <kbd>N</kbd> следующий · <kbd>B</kbd> заставка · <kbd>Shift</kbd>+<kbd>S</kbd> стоп. Сначала кликните по макету.</p>` : ""}
+        <p class="open"><a href="${d.f}" target="_blank" rel="noopener">Открыть ${d.dev ? "в отдельной вкладке" : "макет на весь экран"} ↗</a></p>`;
+      if (d.dev) {
+        $("#s-device").classList.add("on");
+        if (!$("#fPC").src.endsWith(d.f)) { $("#fPC").src = d.f; $("#fPh").src = d.f; }
+        $("#dUrl").textContent = d.g === 5 ? "festmon.ru/helper" : "festmon.ru/program";
+        $("#info2").innerHTML = info;
+        fitDev();
+      } else {
+        $("#s-design").classList.add("on");
+        if (!$("#frame").src.endsWith(d.f)) $("#frame").src = d.f;
+        $("#info").innerHTML = info;
+        fit();
+      }
     }
     $("#count").textContent = i === 0 ? "" : i === SLIDES.length - 1 ? "" : `${i} / ${D.length}`;
     $("#prev").disabled = i === 0; $("#next").disabled = i === SLIDES.length - 1;
@@ -226,7 +288,7 @@ body.noinfo .info { margin-right: -340px; }
   document.addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) go(b.dataset.go); });
   $("#prev").onclick = () => go(cur - 1);
   $("#next").onclick = () => go(cur + 1);
-  $("#infoBtn").onclick = () => { document.body.classList.toggle("noinfo"); $("#infoBtn").classList.toggle("on"); setTimeout(fit, 220); };
+  $("#infoBtn").onclick = () => { document.body.classList.toggle("noinfo"); $("#infoBtn").classList.toggle("on"); setTimeout(() => { fit(); fitDev(); }, 220); };
   document.addEventListener("keydown", (e) => {
     if (e.target.closest && e.target.closest("input,textarea")) return;
     if (e.key === "PageDown" || e.key === "ArrowRight") go(cur + 1);
@@ -248,7 +310,21 @@ body.noinfo .info { margin-right: -340px; }
     }
     document.querySelectorAll(".tile .th").forEach((t) => (t.querySelector("iframe").style.transform = `scale(${t.clientWidth / 1600})`));
   }
-  addEventListener("resize", fit);
+  // ПК и телефон рядом: каждое «устройство» рисует страницу в своём размере и уменьшается.
+  const PC = { w: 1366, h: 854 }, PH = { w: 390, h: 844 };
+  let dmode = "both";
+  function fitDev() {
+    const box = $("#devs"); box.className = "devs m-" + dmode;
+    const W = box.clientWidth - 32, H = box.clientHeight - 40;
+    if (W <= 0 || H <= 0) return;
+    const sPh = Math.min(1, (H - 24) / PH.h, (dmode === "ph" ? W : W * .3) / PH.w);
+    const phW = dmode === "pc" ? 0 : PH.w * sPh + 24 + 28;
+    const sPc = Math.min(1, (W - phW) / PC.w, (H - 28) / PC.h);
+    const set = (scr, fr, d, s) => { scr.style.width = d.w * s + "px"; scr.style.height = d.h * s + "px"; Object.assign(fr.style, { width: d.w + "px", height: d.h + "px", transform: `scale(${s})` }); };
+    set($("#scrPC"), $("#fPC"), PC, sPc); set($("#scrPh"), $("#fPh"), PH, sPh);
+  }
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-dm]"); if (b) { dmode = b.dataset.dm; document.querySelectorAll("[data-dm]").forEach((x) => x.classList.toggle("on", x === b)); fitDev(); } });
+  addEventListener("resize", () => { fit(); fitDev(); });
   if (innerWidth > 1300) { document.body.classList.remove("noinfo"); $("#infoBtn").classList.add("on"); }
   const start = SLIDES.indexOf(location.hash.slice(1));
   go(start >= 0 ? start : 0);

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FestMon · Сайт 2 · Табло</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* Сайт для зрителей, вариант 2 «Табло»: светлый, строгий, как табло вокзала.
+ * ПК: полоса «Сейчас» на всю ширину, вкладки блоков, сетка карточек 3 в ряд.
+ * Телефон: та же полоса компактно, карточки в одну колонку, вкладки свайпаются. */
+:root { --bg: #f4f3ef; --paper: #fff; --ink: #121212; --dim: #6b6b6b; --line: #e3e1da; --acc: #ff5a1f; --ok: #12a150; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 Inter, "Segoe UI", system-ui, sans-serif; }
+button { font: inherit; color: inherit; }
+
+.top { background: var(--ink); color: #fff; }
+.tin { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 14px 20px; }
+.logo { font-weight: 900; font-size: 20px; letter-spacing: -.02em; }
+.logo span { background: var(--acc); padding: 0 6px; margin-left: 2px; }
+.sp { flex: 1; }
+.clock { font: 700 20px Inter; font-variant-numeric: tabular-nums; }
+
+.board { background: var(--ink); color: #fff; border-top: 1px solid #2a2a2a; }
+.bin { max-width: 1200px; margin: 0 auto; padding: 22px 20px 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.slot small { font-size: 12px; font-weight: 800; letter-spacing: .16em; color: var(--acc); display: flex; gap: 8px; align-items: center; }
+.slot.nx small { color: #9a9a9a; }
+.slot small i { width: 8px; height: 8px; border-radius: 50%; background: var(--acc); animation: bl 1.2s infinite; }
+@keyframes bl { 50% { opacity: .25; } }
+.slot .row { display: flex; gap: 16px; align-items: center; margin-top: 10px; }
+.slot .num { font: 900 54px/1 Inter; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+.slot.nx .num { color: #9a9a9a; }
+.slot b { font-size: 26px; font-weight: 800; display: block; line-height: 1.1; }
+.slot span { color: #b9b9b9; }
+.slot .bar { height: 4px; background: #333; margin-top: 14px; }
+.slot .bar i { display: block; height: 100%; background: var(--acc); transition: width 1s linear; }
+.slot .tm { display: flex; justify-content: space-between; color: #9a9a9a; font-size: 13px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+.wrap { max-width: 1200px; margin: 0 auto; padding: 22px 20px 60px; }
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--ink); margin-bottom: 18px; overflow-x: auto; }
+.tabs button { background: none; border: 0; padding: 10px 18px; font-weight: 800; cursor: pointer; color: var(--dim); white-space: nowrap; }
+.tabs button.on { background: var(--ink); color: #fff; }
+.tabs .cnt { font-weight: 500; opacity: .7; margin-left: 4px; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.c { background: var(--paper); border: 1px solid var(--line); position: relative; display: flex; flex-direction: column; }
+.c img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; filter: saturate(.9); }
+.c .bd { padding: 14px 16px 16px; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; }
+.c .time { font: 900 26px/1 Inter; font-variant-numeric: tabular-nums; grid-row: span 2; }
+.c b { font-size: 17px; font-weight: 800; }
+.c span { color: var(--dim); font-size: 13px; }
+.c .st { position: absolute; top: 10px; left: 10px; background: var(--paper); font-size: 11px; font-weight: 800; letter-spacing: .1em; padding: 4px 8px; }
+.c.live { outline: 3px solid var(--acc); }
+.c.live .st { background: var(--acc); color: #fff; }
+.c.next .st { background: var(--ink); color: #fff; }
+.c.done { opacity: .5; }
+.c.done img { filter: grayscale(1); }
+.c.brk { grid-column: 1 / -1; flex-direction: row; align-items: center; background: repeating-linear-gradient(135deg, #fff 0 14px, #f0eee8 14px 28px); }
+.c.brk img { display: none; }
+.c.brk .bd { flex: 1; }
+.legend { display: flex; gap: 18px; color: var(--dim); font-size: 13px; margin-top: 18px; flex-wrap: wrap; }
+.legend i { display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -1px; }
+
+@media (max-width: 860px) {
+  .tin { padding: 10px 14px; }
+  .bin { grid-template-columns: 1fr; gap: 14px; padding: 14px 14px 16px; }
+  .slot .num { font-size: 36px; }
+  .slot b { font-size: 20px; }
+  .slot.nx .bar, .slot.nx .tm { display: none; }
+  .slot.nx .row { margin-top: 4px; }
+  .wrap { padding: 14px 12px 40px; }
+  .grid { grid-template-columns: 1fr; gap: 10px; }
+  .c { flex-direction: row; }
+  .c img { width: 110px; aspect-ratio: auto; height: auto; object-fit: cover; }
+  .c .bd { padding: 10px 12px; }
+  .c .time { font-size: 20px; }
+  .c b { font-size: 15px; }
+  .c .st { top: 6px; left: 6px; font-size: 9px; padding: 2px 5px; }
+}
+</style>
+</head>
+<body>
+<div class="top"><div class="tin"><div class="logo">FEST<span>MON</span></div><span style="color:#9a9a9a">программа · 30 ноября</span><span class="sp"></span><span class="clock" id="clk"></span></div></div>
+<div class="board"><div class="bin">
+  <div class="slot"><small><i></i>СЕЙЧАС НА СЦЕНЕ</small><div class="row"><div class="num" id="nN"></div><div><b id="nT"></b><span id="nS"></span></div></div>
+    <div class="bar"><i id="nP"></i></div><div class="tm"><span id="nEl"></span><span id="nRem"></span></div></div>
+  <div class="slot nx"><small>СЛЕДУЮЩИЙ</small><div class="row"><div class="num" id="xN"></div><div><b id="xT"></b><span id="xS"></span></div></div></div>
+</div></div>
+<div class="wrap">
+  <div class="tabs" id="tabs"></div>
+  <div class="grid" id="grid"></div>
+  <div class="legend"><span><i style="background:var(--acc)"></i>идёт сейчас</span><span><i style="background:var(--ink)"></i>следующий</span><span><i style="background:#ccc"></i>уже прошёл</span><span>Время ориентировочное и может сдвигаться.</span></div>
+</div>
+
+<script src="assets/common.js"></script>
+<script>
+(function () {
+  const { PROGRAM, state, mmss, cover } = FM;
+  const $ = (s) => document.querySelector(s);
+  const start = new Date(); start.setHours(18, 0, 0, 0);
+  const at = (i) => { let s = 0; for (let k = 0; k < i; k++) s += PROGRAM[k].dur; return new Date(start.getTime() + s * 1000); };
+  const hm = (d) => d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  const BLOCKS = [{ id: 1, t: "Блок 1" }, { id: 2, t: "Блок 2" }, { id: 0, t: "Вся программа" }];
+  const blockOf = (p) => (p.n.startsWith("2") ? 2 : 1);
+  let tab = 1;
+  FM.clock($("#clk"));
+
+  function render() {
+    $("#tabs").innerHTML = BLOCKS.map((b) => `<button class="${b.id === tab ? "on" : ""}" data-b="${b.id}">${b.t}<span class="cnt">${b.id ? PROGRAM.filter((p) => blockOf(p) === b.id).length : PROGRAM.length}</span></button>`).join("");
+    $("#grid").innerHTML = PROGRAM.map((p, i) => ({ p, i })).filter(({ p }) => !tab || blockOf(p) === tab).map(({ p, i }) => {
+      const st = { live: "СЕЙЧАС", next: "СЛЕДУЮЩИЙ", done: "ПРОШЁЛ" }[p.status] || "";
+      return `<div class="c ${p.status} ${p.kind === "break" ? "brk" : ""}"><img src="${cover(p)}" alt="">${st ? `<span class="st">${st}</span>` : ""}
+        <div class="bd"><div class="time">${hm(at(i))}</div><b>${p.n ? p.n + " " : ""}${p.title}</b><span>${p.sub} · ${mmss(p.dur)}</span></div></div>`;
+    }).join("");
+  }
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-b]"); if (b) { tab = +b.dataset.b; render(); } });
+
+  let last = -1;
+  FM.onChange((s) => {
+    const live = PROGRAM[s.liveIdx], nx = PROGRAM[FM.nextIdx()];
+    $("#nN").textContent = live.n; $("#nT").textContent = live.title; $("#nS").textContent = live.sub;
+    $("#nP").style.width = (s.elapsed / live.dur) * 100 + "%"; $("#nEl").textContent = "идёт " + mmss(s.elapsed); $("#nRem").textContent = "осталось " + mmss(live.dur - s.elapsed);
+    $("#xN").textContent = nx ? nx.n : "—"; $("#xT").textContent = nx ? nx.title : "Конец"; $("#xS").textContent = nx ? `${nx.sub} · примерно ${hm(new Date(Date.now() + (live.dur - s.elapsed) * 1000))}` : "";
+    if (last !== s.liveIdx) { last = s.liveIdx; render(); }
+  });
+})();
+</script>
+</body>
+</html>

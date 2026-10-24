@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FestMon · Экран проектора</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+/* Что видит зал. Холст 1920×1080, масштабируется под окно.
+ * Снизу — пульт макета (сцены, слои, переход); прячется клавишей H. */
+:root { --a1: #35e0d2; --a2: #b46bff; --a3: #ff5c9a; --ink: #fff; --bg: #07080c; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #000; color: #e6e8ee; font: 14px/1.35 "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+button, select { font: inherit; color: inherit; }
+
+.wrap { position: absolute; inset: 0 0 var(--ui, 132px) 0; display: grid; place-items: center; transition: bottom .25s; }
+body.hideui .wrap { bottom: 0; }
+.stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: var(--bg); color: var(--ink); font-family: Montserrat, "Segoe UI", sans-serif; }
+
+/* ---------- сцены ---------- */
+.scene { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity .7s ease, transform .7s ease, visibility 0s .7s; }
+.scene.on { opacity: 1; visibility: visible; transition: opacity .7s ease, transform .7s ease, visibility 0s; }
+body.tr-cut .scene { transition: none; }
+body.tr-zoom .scene:not(.on) { transform: scale(1.08); }
+body.tr-slide .scene:not(.on) { transform: translateX(8%); }
+
+/* фон-аврора, общий для заставок */
+.aurora { position: absolute; inset: -20%; background:
+  radial-gradient(40% 50% at 20% 30%, rgba(53,224,210,.55), transparent 70%),
+  radial-gradient(45% 55% at 80% 20%, rgba(180,107,255,.6), transparent 70%),
+  radial-gradient(50% 60% at 60% 90%, rgba(255,92,154,.45), transparent 70%), #0a0b1a;
+  filter: blur(40px); animation: drift 18s ease-in-out infinite alternate; }
+@keyframes drift { 0% { transform: translate(0,0) rotate(0); } 50% { transform: translate(4%, -3%) rotate(8deg); } 100% { transform: translate(-4%, 3%) rotate(-6deg); } }
+.grain { position: absolute; inset: 0; opacity: .08; background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 4px 4px; mix-blend-mode: overlay; }
+
+/* 1. номер */
+.vid { position: absolute; inset: -60px; background-size: cover; background-position: center; filter: blur(28px) saturate(1.5) brightness(.85); animation: kb 22s ease-in-out infinite alternate; }
+@keyframes kb { from { transform: scale(1.02); } to { transform: scale(1.14) translate(-2%, -1%); } }
+.beams { position: absolute; inset: 0; background: conic-gradient(from 200deg at 50% -10%, transparent 0 10deg, rgba(255,255,255,.14) 14deg, transparent 18deg 40deg, rgba(255,255,255,.1) 44deg, transparent 48deg); mix-blend-mode: screen; animation: sweep 7s ease-in-out infinite alternate; }
+@keyframes sweep { from { transform: rotate(-8deg); } to { transform: rotate(8deg); } }
+.lower { position: absolute; left: 96px; bottom: 110px; display: flex; align-items: stretch; transform: translateX(-120%); transition: transform .8s cubic-bezier(.2,.8,.2,1) .4s; }
+.scene.on .lower { transform: none; }
+.lower .num { background: linear-gradient(135deg, var(--a1), #1aa79c); color: #002a26; font-weight: 900; font-size: 56px; padding: 18px 30px; display: grid; place-items: center; border-radius: 18px 0 0 18px; }
+.lower .txt { background: rgba(8,10,20,.82); backdrop-filter: blur(12px); padding: 18px 36px 18px 28px; border-radius: 0 18px 18px 0; border-left: 4px solid var(--a2); }
+.lower .txt b { display: block; font-size: 54px; font-weight: 800; line-height: 1.05; }
+.lower .txt span { font-size: 26px; font-weight: 500; opacity: .85; }
+.lower .txt i { font-style: normal; font-size: 18px; letter-spacing: .2em; color: var(--a1); font-weight: 700; display: block; margin-bottom: 4px; }
+
+/* 2. заставка */
+.splash { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.logo { font-size: 190px; font-weight: 900; letter-spacing: .06em; line-height: 1; background: linear-gradient(100deg, #fff 20%, var(--a1) 45%, var(--a2) 60%, #fff 80%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 6s linear infinite; }
+@keyframes shine { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+.splash .sub { font-size: 40px; font-weight: 700; letter-spacing: .4em; margin-top: 18px; opacity: .9; }
+.splash .tags { margin-top: 40px; font-size: 26px; font-weight: 600; opacity: .7; letter-spacing: .05em; }
+.ring { position: absolute; left: 50%; top: 50%; border: 2px solid rgba(255,255,255,.12); border-radius: 50%; transform: translate(-50%, -50%); animation: pulse 6s ease-out infinite; }
+@keyframes pulse { from { width: 300px; height: 300px; opacity: 1; } to { width: 1900px; height: 1900px; opacity: 0; } }
+
+/* 3. реклама */
+.ads { position: absolute; inset: 0; }
+.ad { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 0 140px; gap: 80px; opacity: 0; transform: translateY(30px); transition: opacity .8s, transform .8s; }
+.ad.on { opacity: 1; transform: none; }
+.ad .mark { width: 520px; height: 520px; border-radius: 120px; display: grid; place-items: center; font-size: 240px; justify-self: center; box-shadow: 0 40px 120px rgba(0,0,0,.5); }
+.ad h2 { margin: 0; font-size: 96px; font-weight: 900; line-height: 1; }
+.ad p { font-size: 40px; font-weight: 500; opacity: .85; margin: 24px 0 0; }
+.ad .promo { display: inline-block; margin-top: 40px; font-size: 34px; font-weight: 800; padding: 14px 30px; border-radius: 16px; border: 3px dashed rgba(255,255,255,.6); }
+.ads .pre { position: absolute; top: 60px; left: 140px; font-size: 22px; letter-spacing: .3em; font-weight: 700; opacity: .6; }
+.ads .dots { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); display: flex; gap: 14px; }
+.ads .dots i { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,.3); }
+.ads .dots i.on { background: #fff; width: 46px; border-radius: 7px; }
+
+/* 4. антракт с таймером */
+.brk { position: absolute; inset: 0; display: grid; grid-template-columns: 1.4fr 1fr; padding: 110px 120px; gap: 80px; }
+.brk h2 { margin: 0; font-size: 44px; letter-spacing: .3em; font-weight: 800; color: var(--a1); }
+.brk .big { font-size: 330px; font-weight: 900; line-height: .95; font-variant-numeric: tabular-nums; letter-spacing: -.02em; margin: 10px 0 0 -12px; text-shadow: 0 20px 80px rgba(53,224,210,.35); }
+.brk .until { font-size: 38px; font-weight: 600; opacity: .85; }
+.brk .bar { height: 14px; border-radius: 7px; background: rgba(255,255,255,.12); margin-top: 40px; overflow: hidden; }
+.brk .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--a1), var(--a2)); border-radius: 7px; transition: width 1s linear; }
+.brk .side { display: flex; flex-direction: column; gap: 30px; justify-content: center; }
+.card { background: rgba(10,12,26,.66); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); border-radius: 30px; padding: 30px 36px; }
+.card small { display: block; font-size: 20px; letter-spacing: .2em; opacity: .65; font-weight: 700; margin-bottom: 10px; }
+.card b { font-size: 40px; font-weight: 800; }
+.card span { display: block; font-size: 26px; opacity: .8; margin-top: 4px; }
+.eq { display: inline-flex; gap: 6px; align-items: flex-end; height: 34px; margin-right: 16px; vertical-align: -4px; }
+.eq i { width: 8px; background: var(--a1); border-radius: 3px; animation: eq 1s ease-in-out infinite; }
+.eq i:nth-child(2) { animation-delay: -.3s; } .eq i:nth-child(3) { animation-delay: -.6s; } .eq i:nth-child(4) { animation-delay: -.15s; }
+@keyframes eq { 0%, 100% { height: 8px; } 50% { height: 34px; } }
+.qrbox { background: #fff; border-radius: 22px; padding: 18px; display: inline-block; line-height: 0; }
+.qrbox svg, .qrbox img { display: block; }
+.card.qr { display: flex; gap: 30px; align-items: center; }
+
+/* 5. голосование QR на весь экран */
+.vote { position: absolute; inset: 0; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 110px; padding: 0 170px; }
+.vote h2 { font-size: 110px; font-weight: 900; line-height: 1; margin: 0; }
+.vote h2 em { font-style: normal; background: linear-gradient(90deg, var(--a1), var(--a2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.vote p { font-size: 40px; font-weight: 500; opacity: .85; margin: 30px 0; }
+.vote .url { font-size: 34px; font-weight: 700; color: var(--a1); }
+.vote .qrbox { padding: 30px; border-radius: 40px; box-shadow: 0 30px 120px rgba(53,224,210,.35); animation: bob 3s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-14px); } }
+
+/* 6. закрытие номера */
+.close { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.close .thx { font-size: 150px; font-weight: 900; line-height: 1; }
+.close .who { font-size: 56px; font-weight: 700; margin-top: 26px; }
+.close .who span { color: var(--a1); }
+.close .clap { font-size: 120px; margin-top: 30px; animation: clap .6s ease-in-out infinite alternate; display: inline-block; }
+@keyframes clap { to { transform: rotate(-12deg) scale(1.1); } }
+.close .nextc { position: absolute; right: 90px; bottom: 80px; text-align: left; }
+.close .nextc img { width: 300px; border-radius: 16px; display: block; margin-top: 10px; }
+
+/* 7. до начала */
+.cd { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.cd small { font-size: 40px; letter-spacing: .4em; font-weight: 700; opacity: .8; }
+.cd .t { font-size: 380px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.cd .t span { display: inline-block; animation: tick 1s ease-out infinite; }
+@keyframes tick { from { transform: scale(1.04); } to { transform: scale(1); } }
+.cd p { font-size: 34px; opacity: .75; margin: 0; }
+
+/* ---------- слои поверх любой сцены ---------- */
+.ov { position: absolute; pointer-events: none; transition: opacity .5s, transform .5s; }
+.ov.off { opacity: 0; transform: translateY(10px); }
+.bug { top: 46px; right: 56px; font-size: 34px; font-weight: 900; letter-spacing: .1em; opacity: .9; display: flex; align-items: center; gap: 12px; }
+.bug i { width: 14px; height: 14px; border-radius: 50%; background: #ff3344; box-shadow: 0 0 16px #ff3344; animation: blink 1.4s infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+.bug span { color: var(--a1); }
+.clock { top: 40px; left: 56px; font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; background: rgba(0,0,0,.45); padding: 8px 22px; border-radius: 14px; backdrop-filter: blur(8px); }
+.ticker { left: 0; right: 0; bottom: 0; height: 74px; background: linear-gradient(90deg, #b4141e, #7a0f50); display: flex; align-items: center; overflow: hidden; }
+.ticker b { flex: none; height: 100%; display: grid; place-items: center; padding: 0 30px; background: #fff; color: #b4141e; font-size: 28px; font-weight: 900; letter-spacing: .1em; }
+.ticker .run { white-space: nowrap; font-size: 32px; font-weight: 700; padding-left: 100%; animation: run 26s linear infinite; }
+@keyframes run { to { transform: translateX(-100%); } }
+.qrc { right: 56px; bottom: 110px; display: flex; align-items: center; gap: 18px; background: rgba(10,12,26,.8); padding: 14px 20px 14px 14px; border-radius: 22px; backdrop-filter: blur(10px); }
+.qrc .qrbox { padding: 8px; border-radius: 12px; }
+.qrc div { font-size: 22px; font-weight: 700; line-height: 1.2; }
+.qrc div span { display: block; font-size: 17px; font-weight: 500; opacity: .75; }
+.pip { width: 560px; height: 315px; border-radius: 22px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.6); border: 4px solid rgba(255,255,255,.85); transition: all .5s cubic-bezier(.2,.8,.2,1); }
+.pip.tr { top: 40px; right: 56px; } .pip.br { bottom: 110px; right: 56px; } .pip.bl { bottom: 110px; left: 56px; } .pip.tl { top: 40px; left: 56px; }
+.pip .cam { position: absolute; inset: 0; background: radial-gradient(60% 80% at 50% 120%, #3a2a55, #0d0d18); }
+.pip .cam::before { content: ""; position: absolute; left: 50%; bottom: -40px; width: 200px; height: 240px; transform: translateX(-50%); border-radius: 100px 100px 0 0; background: #1c1630; box-shadow: 0 -150px 0 -45px #1c1630; }
+.pip .cam::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 2px, transparent 2px 4px); }
+.pip .lbl { position: absolute; left: 14px; top: 12px; font-size: 18px; font-weight: 800; background: rgba(0,0,0,.6); padding: 4px 12px; border-radius: 8px; display: flex; gap: 8px; align-items: center; }
+.pip .lbl i { width: 10px; height: 10px; border-radius: 50%; background: #ff3344; animation: blink 1s infinite; }
+.vign { inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.75)); }
+.safe { inset: 54px 96px; border: 2px dashed rgba(53,224,210,.7); }
+.safe::after { content: "безопасная зона 90% — видно только оператору"; position: absolute; left: 10px; top: 6px; font: 600 18px "Segoe UI"; color: rgba(53,224,210,.9); }
+canvas.fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* ---------- пульт макета ---------- */
+.ui { position: absolute; left: 0; right: 0; bottom: 0; height: 132px; background: #121318; border-top: 1px solid #2c2f39; display: grid; grid-template-columns: auto 1fr auto; gap: 18px; padding: 12px 16px; transition: transform .25s; }
+body.hideui .ui { transform: translateY(100%); }
+.ui h5 { margin: 0 0 6px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #8b90a0; }
+.row { display: flex; gap: 6px; flex-wrap: wrap; }
+.ui button.s, .ui label.l { background: #1e2027; border: 1px solid #363a45; border-radius: 7px; padding: 6px 11px; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ui button.s kbd, .ui label.l kbd { font: 600 10px Consolas, monospace; color: #8b90a0; }
+.ui button.s:hover, .ui label.l:hover { border-color: #4a5060; }
+.ui button.s.on { border-color: #35e0d2; background: #16433e; color: #35e0d2; }
+.ui label.l input { accent-color: #35e0d2; margin: 0; }
+.ui label.l:has(input:checked) { border-color: #35e0d2; color: #35e0d2; }
+.ui select { background: #1e2027; border: 1px solid #363a45; border-radius: 7px; padding: 5px 8px; }
+.ui .right { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; justify-content: center; }
+.ui .right .row { justify-content: flex-end; }
+.ui .hint { font-size: 12px; color: #8b90a0; }
+.show { position: fixed; right: 12px; bottom: 12px; z-index: 5; background: rgba(18,19,24,.8); border: 1px solid #2c2f39; border-radius: 8px; padding: 6px 12px; cursor: pointer; display: none; }
+body.hideui .show { display: block; opacity: 0; transition: opacity .3s; }
+body.hideui .show:hover { opacity: 1; }
+@media (max-width: 1100px) { .ui { grid-template-columns: 1fr; height: auto; max-height: 50vh; overflow: auto; } .wrap { bottom: var(--ui, 300px); } }
+</style>
+</head>
+<body class="tr-fade">
+<div class="wrap" id="wrap"><div class="stage" id="stage">
+  <!-- 1. номер -->
+  <section class="scene" data-s="number">
+    <div class="vid" id="vid"></div><div class="beams"></div>
+    <div class="lower"><div class="num" id="lNum">1.3</div><div class="txt"><i id="lNom">ОРИГИНАЛЬНЫЙ ВОКАЛ</i><b id="lTitle">Necrophagous</b><span id="lSub">«Ночная смена»</span></div></div>
+  </section>
+  <!-- 2. заставка -->
+  <section class="scene" data-s="splash">
+    <div class="aurora"></div><div class="grain"></div><div class="ring"></div><div class="ring" style="animation-delay:-3s"></div>
+    <div class="splash"><div><div class="logo">FESTMON</div><div class="sub">ФЕСТИВАЛЬ · 30 НОЯБРЯ</div><div class="tags">#festmon2026 · сцена «Главная»</div></div></div>
+  </section>
+  <!-- 3. реклама -->
+  <section class="scene" data-s="ads">
+    <div class="aurora" style="filter:blur(60px) saturate(.7)"></div>
+    <div class="ads" id="ads"><div class="pre">ПАРТНЁРЫ ФЕСТИВАЛЯ</div></div>
+  </section>
+  <!-- 4. антракт -->
+  <section class="scene" data-s="break">
+    <div class="aurora" style="opacity:.7"></div><div class="grain"></div>
+    <div class="brk">
+      <div><h2>АНТРАКТ</h2><div class="big" id="brkT">15:00</div><div class="until">до начала второго блока</div><div class="bar"><i id="brkBar"></i></div></div>
+      <div class="side">
+        <div class="card"><small>СЕЙЧАС ИГРАЕТ</small><b><span class="eq"><i></i><i></i><i></i><i></i></span>Sakura Breeze</b><span>FestMon bed · фоновая музыка</span></div>
+        <div class="card"><small>ДАЛЕЕ НА СЦЕНЕ</small><b>1.9 HIF, Minufe</b><span>«Двое в городе» · групповой танец</span></div>
+        <div class="card qr"><div class="qrbox" data-qr="170"></div><div><b style="font-size:34px">Голосуйте!</b><span>Наведите камеру и выберите лучший номер первого блока</span></div></div>
+      </div>
+    </div>
+  </section>
+  <!-- 5. голосование -->
+  <section class="scene" data-s="vote">
+    <div class="aurora"></div><div class="grain"></div>
+    <div class="vote"><div class="qrbox" data-qr="520"></div>
+      <div><h2>Зрительское<br><em>голосование</em></h2><p>Наведите камеру телефона на QR-код и отдайте голос за любимый номер.</p><div class="url">hackerkk.github.io/festmon-designs</div></div></div>
+  </section>
+  <!-- 6. закрытие номера -->
+  <section class="scene" data-s="close">
+    <div class="aurora" style="opacity:.8"></div>
+    <div class="close"><div><div class="thx">Спасибо!</div><div class="who"><span id="cN">1.3</span> <span style="color:#fff" id="cT">Necrophagous</span></div><div class="clap">👏</div></div>
+      <div class="nextc"><div class="card" style="padding:20px 24px"><small>ДАЛЕЕ</small><b id="cNext" style="font-size:34px">1.4 Pook</b><img id="cImg" alt=""></div></div></div>
+  </section>
+  <!-- 7. до начала -->
+  <section class="scene" data-s="countdown">
+    <div class="aurora"></div><div class="grain"></div>
+    <div class="cd"><div><small>ДО НАЧАЛА ФЕСТИВАЛЯ</small><div class="t"><span id="cdT">05:00</span></div><p>Займите места и отключите звук телефона 🔕</p></div></div>
+  </section>
+
+  <!-- слои -->
+  <canvas class="fx" id="fx" width="1920" height="1080"></canvas>
+  <div class="ov vign off" id="o-vign"></div>
+  <div class="ov pip br off" id="o-pip"><div class="cam"></div><div class="lbl"><i></i>КАМЕРА · СЦЕНА</div></div>
+  <div class="ov qrc off" id="o-qr"><div class="qrbox" data-qr="120"></div><div>Голосование<span>наведите камеру</span></div></div>
+  <div class="ov clock off" id="o-clock"></div>
+  <div class="ov bug" id="o-bug"><i></i>FEST<span>MON</span></div>
+  <div class="ov ticker off" id="o-ticker"><b>ОБЪЯВЛЕНИЕ</b><div class="run">Гардероб работает до 23:00 · Фуд-корт на втором этаже · Голосование за лучший номер открыто до конца второго блока · Не забудьте забрать сувениры у стойки регистрации ·</div></div>
+  <div class="ov safe off" id="o-safe"></div>
+</div></div>
+
+<div class="ui" id="ui">
+  <div>
+    <h5>Сцена на экране</h5>
+    <div class="row" id="scenes"></div>
+  </div>
+  <div>
+    <h5>Слои поверх</h5>
+    <div class="row" id="layers"></div>
+  </div>
+  <div class="right">
+    <div class="row">
+      <label class="l">Переход <select id="trSel"><option value="fade">Растворение</option><option value="zoom">Наезд</option><option value="slide">Сдвиг</option><option value="cut">Резко</option></select></label>
+      <label class="l">Эффект <select id="fxSel"><option value="none">Нет</option><option value="sparkle" selected>Искры</option><option value="snow">Снег</option><option value="confetti">Конфетти</option></select></label>
+      <label class="l">Окно в окне <select id="pipPos"><option value="br">справа внизу</option><option value="tr">справа вверху</option><option value="bl">слева внизу</option><option value="tl">слева вверху</option></select></label>
+    </div>
+    <div class="row">
+      <button class="s" id="demo">▶ Автопоказ</button>
+      <button class="s" id="full" title="F">⛶ На весь экран <kbd>F</kbd></button>
+      <button class="s" id="hide" title="H">Скрыть пульт <kbd>H</kbd></button>
+    </div>
+    <div class="hint">Это макет того, что видит зал. Цифры 1–7 — сцены, Q W E R T Y U — слои.</div>
+  </div>
+</div>
+<button class="show" id="showUi">Показать пульт (H)</button>
+
+<script src="assets/common.js"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = (s) => document.querySelector(s);
+  const { PROGRAM, cover, mmss } = FM;
+  const VOTE_URL = "https://hackerkk.github.io/festmon-designs/#vote";
+
+  // ---------- масштаб холста ----------
+  function fit() {
+    const w = $("#wrap"), r = w.getBoundingClientRect();
+    const s = Math.min(r.width / 1920, r.height / 1080);
+    $("#stage").style.transform = `translate(${(r.width - 1920 * s) / 2}px, ${(r.height - 1080 * s) / 2}px) scale(${s})`;
+  }
+  addEventListener("resize", fit);
+  new ResizeObserver(fit).observe($("#wrap"));
+
+  // ---------- QR ----------
+  function drawQR() {
+    document.querySelectorAll("[data-qr]").forEach((el) => {
+      const size = +el.dataset.qr;
+      if (window.qrcode) {
+        const q = qrcode(0, "M"); q.addData(VOTE_URL); q.make();
+        const n = q.getModuleCount(), cell = size / n;
+        let rects = "";
+        for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) rects += `<rect x="${(x * cell).toFixed(2)}" y="${(y * cell).toFixed(2)}" width="${(cell + .3).toFixed(2)}" height="${(cell + .3).toFixed(2)}"/>`;
+        el.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="#0a0b1a">${rects}</svg>`;
+      } else {
+        el.innerHTML = `<div style="width:${size}px;height:${size}px;display:grid;place-items:center;color:#000;font:700 ${size / 8}px Montserrat">QR</div>`;
+      }
+    });
+  }
+
+  // ---------- данные сцен ----------
+  const live = PROGRAM[FM.state.liveIdx], nx = PROGRAM[FM.nextIdx()];
+  const NOMS = { ГД: "ГРУППОВОЙ ТАНЕЦ", ОРИДЖ: "ОРИДЖИНАЛ", ОВ: "ОРИГИНАЛЬНЫЙ ВОКАЛ", ОЗ: "ОДИНОЧНОЕ ЗАДАНИЕ" };
+  $("#vid").style.backgroundImage = `url("${cover(live)}")`;
+  $("#lNum").textContent = live.n; $("#lNom").textContent = NOMS[live.nom] || live.nom; $("#lTitle").textContent = live.title; $("#lSub").textContent = `«${live.sub}»`;
+  $("#cN").textContent = live.n; $("#cT").textContent = live.title; $("#cNext").textContent = `${nx.n} ${nx.title}`; $("#cImg").src = cover(nx);
+
+  const ADS = [
+    { name: "Чайная «Самовар»", text: "Горячий чай и пирожки в фойе", promo: "−10% по слову FESTMON", icon: "🫖", bg: "linear-gradient(135deg,#ff9e3d,#d6333a)" },
+    { name: "Студия «Пиксель»", text: "Косплей-фотосессии прямо на фестивале", promo: "Стенд №4", icon: "📸", bg: "linear-gradient(135deg,#4da3ff,#7d6bff)" },
+    { name: "Магазин «Аниме-лавка»", text: "Мерч, значки, фигурки", promo: "Подарок к покупке от 1000 ₽", icon: "🛍️", bg: "linear-gradient(135deg,#35e0d2,#1d7a3d)" },
+  ];
+  $("#ads").insertAdjacentHTML("beforeend", ADS.map((a, i) => `<div class="ad ${i ? "" : "on"}"><div class="mark" style="background:${a.bg}">${a.icon}</div><div><h2>${a.name}</h2><p>${a.text}</p><div class="promo">${a.promo}</div></div></div>`).join("") +
+    `<div class="dots">${ADS.map((_, i) => `<i class="${i ? "" : "on"}"></i>`).join("")}</div>`);
+  let adI = 0;
+  setInterval(() => {
+    adI = (adI + 1) % ADS.length;
+    document.querySelectorAll(".ad").forEach((el, i) => el.classList.toggle("on", i === adI));
+    document.querySelectorAll(".ads .dots i").forEach((el, i) => el.classList.toggle("on", i === adI));
+  }, 4500);
+
+  // таймеры: антракт 15 мин, до начала 5 мин — идут по-настоящему
+  const t0 = Date.now();
+  setInterval(() => {
+    const sec = (Date.now() - t0) / 1000;
+    const brk = Math.max(0, 900 - sec), cd = Math.max(0, 300 - sec);
+    const f = (s) => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+    $("#brkT").textContent = f(brk); $("#brkBar").style.width = (sec / 900) * 100 + "%";
+    $("#cdT").textContent = f(cd);
+    $("#o-clock").textContent = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  }, 250);
+
+  // ---------- сцены и слои ----------
+  const SCENES = [
+    { id: "number", t: "Номер", i: "🎬" }, { id: "splash", t: "Заставка", i: "✨" }, { id: "ads", t: "Реклама", i: "📣" },
+    { id: "break", t: "Антракт + таймер", i: "⏱" }, { id: "vote", t: "QR-голосование", i: "▦" }, { id: "close", t: "Закрытие номера", i: "👏" },
+    { id: "countdown", t: "До начала", i: "⏳" },
+  ];
+  const LAYERS = [
+    { id: "bug", t: "Логотип в углу", k: "Q" }, { id: "clock", t: "Часы", k: "W" }, { id: "ticker", t: "Бегущая строка", k: "E" },
+    { id: "qr", t: "QR в углу", k: "R" }, { id: "pip", t: "Окно в окне", k: "T" }, { id: "vign", t: "Виньетка", k: "Y" }, { id: "safe", t: "Безопасная зона", k: "U" },
+  ];
+  let ui = FM.store.get("p-ui", null) || { scene: "number", layers: { bug: true }, tr: "fade", fx: "sparkle", pip: "br" };
+  const save = () => FM.store.set("p-ui", ui);
+  $("#scenes").innerHTML = SCENES.map((s, i) => `<button class="s" data-scene="${s.id}">${s.i} ${s.t} <kbd>${i + 1}</kbd></button>`).join("");
+  $("#layers").innerHTML = LAYERS.map((l) => `<label class="l"><input type="checkbox" data-layer="${l.id}">${l.t} <kbd>${l.k}</kbd></label>`).join("");
+
+  function apply() {
+    document.querySelectorAll(".scene").forEach((s) => s.classList.toggle("on", s.dataset.s === ui.scene));
+    document.querySelectorAll("[data-scene]").forEach((b) => b.classList.toggle("on", b.dataset.scene === ui.scene));
+    LAYERS.forEach((l) => { $("#o-" + l.id).classList.toggle("off", !ui.layers[l.id]); document.querySelector(`[data-layer="${l.id}"]`).checked = !!ui.layers[l.id]; });
+    document.body.className = document.body.className.replace(/tr-\w+/, "tr-" + ui.tr);
+    $("#trSel").value = ui.tr; $("#fxSel").value = ui.fx; $("#pipPos").value = ui.pip;
+    $("#o-pip").className = "ov pip " + ui.pip + (ui.layers.pip ? "" : " off");
+    // бегущая строка поднимает нижние элементы
+    const lift = ui.layers.ticker ? 74 : 0;
+    document.querySelector(".lower").style.marginBottom = lift + "px";
+    $("#o-qr").style.marginBottom = $("#o-pip").style.marginBottom = lift + "px";
+    save();
+  }
+  function setScene(id) { ui.scene = id; apply(); }
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-scene]"); if (b) { stopDemo(); setScene(b.dataset.scene); } });
+  document.addEventListener("change", (e) => { const c = e.target.closest("[data-layer]"); if (c) { ui.layers[c.dataset.layer] = c.checked; apply(); } });
+  $("#trSel").onchange = (e) => { ui.tr = e.target.value; apply(); };
+  $("#fxSel").onchange = (e) => { ui.fx = e.target.value; save(); };
+  $("#pipPos").onchange = (e) => { ui.pip = e.target.value; ui.layers.pip = true; apply(); };
+
+  // ---------- автопоказ ----------
+  let demoT = null;
+  function stopDemo() { clearInterval(demoT); demoT = null; $("#demo").classList.remove("on"); $("#demo").textContent = "▶ Автопоказ"; }
+  $("#demo").onclick = () => {
+    if (demoT) return stopDemo();
+    $("#demo").classList.add("on"); $("#demo").textContent = "❚❚ Автопоказ";
+    demoT = setInterval(() => { const i = SCENES.findIndex((s) => s.id === ui.scene); setScene(SCENES[(i + 1) % SCENES.length].id); }, 6000);
+  };
+
+  // ---------- показ ----------
+  function toggleUi() { document.body.classList.toggle("hideui"); setTimeout(fit, 260); }
+  $("#hide").onclick = $("#showUi").onclick = toggleUi;
+  $("#full").onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); };
+  const keys = { KeyH: toggleUi, KeyF: () => $("#full").click() };
+  SCENES.forEach((s, i) => (keys["Digit" + (i + 1)] = () => { stopDemo(); setScene(s.id); }));
+  LAYERS.forEach((l) => (keys["Key" + l.k] = () => { ui.layers[l.id] = !ui.layers[l.id]; apply(); }));
+  FM.hotkeys(keys);
+
+  // ---------- частицы ----------
+  const cv = $("#fx"), cx = cv.getContext("2d");
+  const P = Array.from({ length: 140 }, () => ({ x: Math.random() * 1920, y: Math.random() * 1080, r: Math.random(), v: Math.random(), a: Math.random() * 6.28, c: Math.floor(Math.random() * 5) }));
+  const CONF = ["#35e0d2", "#b46bff", "#ff5c9a", "#ffd54f", "#4da3ff"];
+  function frame(t) {
+    cx.clearRect(0, 0 , 1920, 1080);
+    const kind = ui.fx;
+    if (kind !== "none") P.forEach((p) => {
+      if (kind === "snow") {
+        p.y += .6 + p.v * 1.6; p.x += Math.sin(t / 1500 + p.a) * .6;
+        cx.fillStyle = `rgba(255,255,255,${.35 + p.r * .5})`; cx.beginPath(); cx.arc(p.x, p.y, 1.5 + p.r * 3.5, 0, 6.28); cx.fill();
+      } else if (kind === "confetti") {
+        p.y += 1.2 + p.v * 2.4; p.x += Math.sin(t / 700 + p.a) * 1.4; p.a += .05;
+        cx.save(); cx.translate(p.x, p.y); cx.rotate(p.a); cx.fillStyle = CONF[p.c]; cx.fillRect(-7, -3, 14, 6 + p.r * 6); cx.restore();
+      } else {
+        p.y -= .25 + p.v * .6; p.x += Math.sin(t / 2000 + p.a) * .3;
+        const tw = .4 + .6 * Math.abs(Math.sin(t / 600 + p.a * 3));
+        cx.fillStyle = `rgba(255,240,200,${tw * (.3 + p.r * .5)})`; cx.beginPath(); cx.arc(p.x, p.y, 1 + p.r * 2.4, 0, 6.28); cx.fill();
+      }
+      if (p.y > 1100) { p.y = -20; p.x = Math.random() * 1920; }
+      if (p.y < -20) { p.y = 1100; p.x = Math.random() * 1920; }
+    });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // В превью презентации пульт не нужен — показываем «как в зале» с автопоказом.
+  if (new URLSearchParams(location.search).has("show")) { document.body.classList.add("hideui"); $("#demo").click(); }
+  drawQR(); apply(); fit();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FestMon · Сайт 3 · Сторис</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* Сайт для зрителей, вариант 3 «Сторис»: сначала для телефона, фиолетовый, как приложение.
+ * Телефон: кружки ближайших номеров, крупная карточка «Сейчас», карусель «Далее», нижнее меню.
+ * ПК: меню слева, по центру «Сейчас» и программа, справа голосование и инфо. */
+:root { --bg1: #2b2775; --bg2: #16143f; --card: rgba(255,255,255,.07); --card2: rgba(255,255,255,.12); --text: #fff; --dim: #c0bdf0; --grad: linear-gradient(120deg, #d44dff, #8a5cff 55%, #5b6dff); --pink: #ff5c9a; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; color: var(--text); font: 15px/1.45 Montserrat, "Segoe UI", system-ui, sans-serif; }
+body { background: radial-gradient(900px 600px at 10% -10%, #4a3fc0, transparent 60%), radial-gradient(800px 600px at 110% 110%, #5b2a8a, transparent 60%), linear-gradient(160deg, var(--bg1), var(--bg2)); background-attachment: fixed; }
+button { font: inherit; color: inherit; }
+
+.app { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 220px 1fr 320px; gap: 26px; padding: 26px 22px 40px; }
+.side { position: sticky; top: 26px; align-self: start; display: flex; flex-direction: column; gap: 6px; }
+.logo { font-size: 24px; font-weight: 900; margin-bottom: 18px; }
+.logo span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.nav button { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: 0; padding: 12px 14px; border-radius: 14px; cursor: pointer; font-weight: 700; color: var(--dim); text-align: left; }
+.nav button.on { background: var(--card2); color: #fff; }
+.nav button i { font-style: normal; font-size: 18px; width: 22px; text-align: center; }
+
+.stories { display: flex; gap: 14px; overflow-x: auto; padding: 4px 2px 12px; scrollbar-width: none; }
+.stories::-webkit-scrollbar { display: none; }
+.st { flex: none; width: 76px; text-align: center; cursor: pointer; background: none; border: 0; padding: 0; }
+.st .ring { width: 72px; height: 72px; border-radius: 50%; padding: 3px; background: var(--grad); margin: 0 auto; }
+.st.live .ring { background: conic-gradient(var(--pink) var(--p, 30%), rgba(255,255,255,.2) 0); }
+.st.done .ring { background: rgba(255,255,255,.2); }
+.st img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--bg2); display: block; }
+.st span { display: block; font-size: 11px; font-weight: 700; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.hero { position: relative; border-radius: 28px; overflow: hidden; min-height: 300px; display: flex; align-items: flex-end; background-size: cover; background-position: center; box-shadow: 0 30px 60px rgba(10,6,40,.5); }
+.hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 20%, rgba(22,20,63,.95)); }
+.hero .in { position: relative; padding: 22px 24px; width: 100%; }
+.badge { display: inline-flex; gap: 8px; align-items: center; background: var(--pink); font-weight: 800; font-size: 12px; letter-spacing: .1em; padding: 5px 12px; border-radius: 99px; }
+.badge i { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: bl 1.2s infinite; }
+@keyframes bl { 50% { opacity: .3; } }
+.hero h1 { margin: 10px 0 0; font-size: 38px; font-weight: 900; line-height: 1.05; }
+.hero p { margin: 4px 0 0; color: var(--dim); font-weight: 600; }
+.hero .pr { height: 6px; border-radius: 3px; background: rgba(255,255,255,.2); margin-top: 16px; overflow: hidden; }
+.hero .pr i { display: block; height: 100%; background: #fff; transition: width 1s linear; }
+.hero .tm { display: flex; justify-content: space-between; margin-top: 6px; font-weight: 700; font-size: 13px; color: var(--dim); }
+.hero .heart { position: absolute; right: 18px; top: 18px; z-index: 1; width: 48px; height: 48px; border-radius: 50%; border: 0; background: rgba(0,0,0,.35); backdrop-filter: blur(8px); font-size: 22px; cursor: pointer; }
+.hero .heart.on { background: var(--pink); }
+
+h2 { font-size: 20px; margin: 26px 0 12px; display: flex; justify-content: space-between; align-items: baseline; }
+h2 small { font-size: 13px; color: var(--dim); font-weight: 600; }
+.carousel { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; scrollbar-width: none; }
+.carousel::-webkit-scrollbar { display: none; }
+.cc { flex: none; width: 230px; scroll-snap-align: start; background: var(--card); border-radius: 22px; padding: 10px; }
+.cc img { width: 100%; aspect-ratio: 16/11; object-fit: cover; border-radius: 16px; display: block; }
+.cc .w { font-size: 12px; font-weight: 800; color: #ffd76a; margin-top: 10px; letter-spacing: .04em; }
+.cc b { display: block; font-size: 17px; }
+.cc span { color: var(--dim); font-size: 13px; }
+.list .li { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 18px; background: var(--card); margin-bottom: 8px; }
+.list .li .t { font-weight: 900; font-size: 16px; width: 54px; }
+.list .li b { display: block; }
+.list .li span { color: var(--dim); font-size: 13px; }
+.list .li.done { opacity: .45; }
+.list .li.live { background: var(--card2); box-shadow: inset 0 0 0 2px var(--pink); }
+
+.right { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 26px; align-self: start; }
+.box { background: var(--card); border-radius: 24px; padding: 20px; }
+.box h3 { margin: 0 0 6px; font-size: 18px; }
+.box p { margin: 0 0 14px; color: var(--dim); font-size: 14px; }
+.vote { display: block; width: 100%; padding: 14px; border-radius: 16px; border: 0; background: var(--grad); font-weight: 800; cursor: pointer; box-shadow: 0 12px 26px rgba(180,80,255,.4); }
+.info div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 14px; }
+.info div:last-child { border: 0; }
+.info span { color: var(--dim); }
+.tabbar { display: none; }
+
+@media (max-width: 1050px) { .app { grid-template-columns: 1fr 300px; } .side { display: none; } }
+@media (max-width: 760px) {
+  .app { grid-template-columns: 1fr; padding: 14px 14px 90px; gap: 0; }
+  .right { position: static; margin-top: 20px; }
+  .mlogo { display: flex !important; }
+  .hero { min-height: 360px; border-radius: 24px; }
+  .hero h1 { font-size: 30px; }
+  .cc { width: 72%; }
+  .tabbar { display: flex; position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 20; background: rgba(22,20,63,.85); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,.1); border-radius: 22px; padding: 6px; }
+  .tabbar button { flex: 1; background: none; border: 0; padding: 8px 0 6px; border-radius: 16px; font-size: 11px; font-weight: 700; color: var(--dim); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .tabbar button i { font-style: normal; font-size: 20px; }
+  .tabbar button.on { color: #fff; background: var(--card2); }
+}
+.mlogo { display: none; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.mlogo .logo { margin: 0; font-size: 22px; }
+.toast { position: fixed; left: 50%; top: 18px; transform: translate(-50%, -30px); opacity: 0; background: #fff; color: #1b1650; padding: 10px 18px; border-radius: 14px; font-weight: 800; transition: .25s; z-index: 50; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="logo"><span>Fest</span>Mon</div>
+    <div class="nav"><button class="on"><i>◉</i>Сейчас</button><button><i>☰</i>Программа</button><button><i>🗳</i>Голосование</button><button><i>ℹ</i>Инфо</button></div>
+  </aside>
+  <main>
+    <div class="mlogo"><div class="logo"><span>Fest</span>Mon</div><span class="badge"><i></i>LIVE</span></div>
+    <div class="stories" id="stories"></div>
+    <div class="hero" id="hero"><button class="heart" id="heart" title="Нравится">♡</button><div class="in">
+      <span class="badge"><i></i>СЕЙЧАС НА СЦЕНЕ</span><h1 id="hT"></h1><p id="hS"></p>
+      <div class="pr"><i id="hP"></i></div><div class="tm"><span id="hEl"></span><span id="hRem"></span></div></div></div>
+    <h2>Далее <small>листайте →</small></h2>
+    <div class="carousel" id="car"></div>
+    <h2>Вся программа <small id="cnt"></small></h2>
+    <div class="list" id="list"></div>
+  </main>
+  <aside class="right">
+    <div class="box"><h3>🗳 Голосование</h3><p>Выберите лучший номер блока — голос можно отдать один раз.</p><button class="vote" id="vote">Голосовать</button></div>
+    <div class="box info"><h3>Инфо</h3><div><span>Начало</span><b>18:00</b></div><div><span>Антракт</span><b>~19:00, 15 мин</b></div><div><span>Гардероб</span><b>до 23:00</b></div><div><span>Фуд-корт</span><b>2 этаж</b></div></div>
+  </aside>
+</div>
+<nav class="tabbar"><button class="on"><i>◉</i>Сейчас</button><button><i>☰</i>Программа</button><button><i>🗳</i>Голос</button><button><i>ℹ</i>Инфо</button></nav>
+<div class="toast" id="toast"></div>
+
+<script src="assets/common.js"></script>
+<script>
+(function () {
+  const { PROGRAM, state, mmss, cover } = FM;
+  const $ = (s) => document.querySelector(s);
+  const start = new Date(); start.setHours(18, 0, 0, 0);
+  const at = (i) => { let s = 0; for (let k = 0; k < i; k++) s += PROGRAM[k].dur; return new Date(start.getTime() + s * 1000); };
+  const hm = (d) => d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  const toast = (t) => { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove("on"), 1700); };
+  $("#heart").onclick = (e) => { e.currentTarget.classList.toggle("on"); e.currentTarget.textContent = e.currentTarget.classList.contains("on") ? "♥" : "♡"; toast("Спасибо! Сердечко улетело на сцену 💜"); };
+  $("#vote").onclick = () => toast("Тут откроется голосование — только макет");
+  document.querySelectorAll(".tabbar button, .nav button").forEach((b) => (b.onclick = () => { b.parentElement.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }));
+
+  function render(s) {
+    const li = s.liveIdx;
+    $("#stories").innerHTML = PROGRAM.map((p, i) => `<button class="st ${p.status}" style="--p:${p.status === "live" ? (s.elapsed / p.dur) * 100 : 0}%"><div class="ring"><img src="${cover(p)}" alt=""></div><span>${p.n || "☕"} ${p.title}</span></button>`).join("");
+    $("#car").innerHTML = PROGRAM.slice(li + 1, li + 6).map((p, k) => {
+      let wait = PROGRAM[li].dur - s.elapsed; for (let j = li + 1; j < li + 1 + k; j++) wait += PROGRAM[j].dur;
+      return `<div class="cc"><img src="${cover(p)}" alt=""><div class="w">через ${Math.max(1, Math.round(wait / 60))} мин · ${hm(new Date(Date.now() + wait * 1000))}</div><b>${p.n} ${p.title}</b><span>${p.sub}</span></div>`;
+    }).join("");
+    $("#list").innerHTML = PROGRAM.map((p, i) => `<div class="li ${p.status}"><div class="t">${hm(at(i))}</div><div><b>${p.n ? p.n + " " : ""}${p.title}</b><span>${p.sub} · ${mmss(p.dur)}</span></div></div>`).join("");
+    $("#cnt").textContent = PROGRAM.length + " позиций";
+    requestAnimationFrame(() => FM.reveal(document.querySelector(".st.live"), $("#stories")));
+  }
+  let last = -1;
+  FM.onChange((s) => {
+    const live = PROGRAM[s.liveIdx];
+    $("#hero").style.backgroundImage = `url("${cover(live)}")`;
+    $("#hT").textContent = `${live.n} ${live.title}`; $("#hS").textContent = live.sub;
+    $("#hP").style.width = (s.elapsed / live.dur) * 100 + "%"; $("#hEl").textContent = mmss(s.elapsed); $("#hRem").textContent = "ещё " + mmss(live.dur - s.elapsed);
+    const ring = document.querySelector(".st.live"); if (ring) ring.style.setProperty("--p", (s.elapsed / live.dur) * 100 + "%");
+    if (last !== s.liveIdx) { last = s.liveIdx; render(s); }
+  });
+})();
+</script>
+</body>
+</html>

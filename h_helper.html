@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FestMon · Окно помощника</title>
+<style>
+/* Окно помощника за кулисами: кого готовить, что вынести, какой свет.
+ * Телефон — главное устройство (помощник ходит по закулисью), ПК — три колонки. */
+:root { --bg: #101116; --card: #1b1d24; --card2: #252831; --line: #32353f; --text: #eef0f5; --dim: #9096a6;
+  --acc: #35e0d2; --ok: #3ddc84; --warn: #ffd54f; --bad: #ff5c5c; --live: #e5333d; --next: #4da3ff; --r: 14px; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 "Segoe UI", system-ui, -apple-system, sans-serif; }
+button, input { font: inherit; color: inherit; }
+
+header { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: #0b0c10; border-bottom: 1px solid var(--line); }
+header b { letter-spacing: .08em; }
+header b span { color: var(--acc); }
+header .role { color: var(--dim); font-size: 13px; }
+header .sp { flex: 1; }
+.conn { font-size: 12px; color: var(--ok); }
+.clock { font: 700 16px Consolas, monospace; }
+
+.app { display: grid; grid-template-columns: 1fr 1.35fr 1fr; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
+.col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card { background: var(--card); border-radius: var(--r); padding: 16px; }
+h4 { margin: 0 0 10px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); display: flex; justify-content: space-between; align-items: center; }
+
+/* сейчас на сцене */
+.now { border-left: 5px solid var(--live); }
+.now .t { font-size: 22px; font-weight: 800; }
+.now .s { color: var(--dim); }
+.big { font: 700 44px/1 Consolas, monospace; color: #ffe082; margin-top: 10px; }
+.big.low { color: var(--bad); }
+.bar { height: 6px; border-radius: 3px; background: var(--card2); margin-top: 10px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--live); transition: width 1s linear; }
+
+/* готовим */
+.prep { border: 2px solid var(--next); }
+.prep .head { display: flex; gap: 14px; align-items: center; }
+.prep .head img { width: 110px; aspect-ratio: 16/10; object-fit: cover; border-radius: 10px; }
+.prep .head .t { font-size: 24px; font-weight: 800; line-height: 1.1; }
+.prep .head .s { color: var(--dim); }
+.eta { display: flex; align-items: center; gap: 10px; margin: 14px 0 4px; padding: 10px 14px; border-radius: 10px; background: rgba(77,163,255,.12); color: #bfe0ff; font-weight: 700; }
+.eta b { font: 700 26px Consolas, monospace; color: #fff; margin-left: auto; }
+.sec { margin-top: 16px; }
+.sec h5 { margin: 0 0 8px; font-size: 13px; color: var(--dim); font-weight: 700; }
+.chk { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; background: var(--card2); margin-bottom: 6px; cursor: pointer; user-select: none; min-height: 48px; }
+.chk .box { width: 26px; height: 26px; border-radius: 7px; border: 2px solid var(--line); display: grid; place-items: center; flex: none; font-weight: 900; }
+.chk.ok .box { background: var(--ok); border-color: var(--ok); color: #05210f; }
+.chk.ok .lb { color: var(--dim); text-decoration: line-through; }
+.chk .lb { flex: 1; }
+.chk .who { font-size: 12px; color: var(--dim); }
+.light { padding: 12px; border-radius: 10px; background: rgba(255,213,79,.08); color: #ffe9a8; }
+.wish { padding: 12px; border-radius: 10px; background: rgba(255,92,92,.1); color: #ffc2c2; }
+.ready { width: 100%; margin-top: 16px; padding: 18px; border-radius: 14px; border: 0; background: var(--card2); font-size: 18px; font-weight: 800; letter-spacing: .04em; cursor: pointer; }
+.ready.go { background: var(--ok); color: #05210f; box-shadow: 0 0 0 4px rgba(61,220,132,.25); }
+.ready:disabled { opacity: .55; cursor: default; }
+.prog { font-size: 13px; color: var(--dim); margin-top: 8px; text-align: center; }
+
+/* очередь */
+.q { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.q:last-child { border: 0; }
+.q .n { font: 700 14px Consolas, monospace; color: var(--dim); }
+.q b { display: block; }
+.q span { font-size: 12px; color: var(--dim); }
+.dots { display: flex; gap: 4px; margin-top: 4px; }
+.dots i { font-style: normal; font-size: 11px; padding: 1px 7px; border-radius: 99px; background: var(--card2); color: var(--dim); }
+.dots i.ok { background: rgba(61,220,132,.15); color: var(--ok); }
+.dots i.no { background: rgba(255,92,92,.12); color: var(--bad); }
+.call { padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: none; cursor: pointer; font-size: 13px; white-space: nowrap; }
+.call.on { border-color: var(--ok); color: var(--ok); }
+
+/* сообщения */
+.msg { padding: 10px 12px; border-radius: 12px; background: var(--card2); margin-bottom: 8px; font-size: 14px; }
+.msg small { display: block; color: var(--dim); font-size: 11px; margin-bottom: 2px; }
+.msg.me { background: rgba(53,224,210,.12); margin-left: 24px; }
+.quick { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.quick button { padding: 8px 12px; border-radius: 99px; border: 1px solid var(--line); background: none; cursor: pointer; font-size: 13px; }
+.quick button.warn { border-color: var(--bad); color: var(--bad); }
+
+.tabbar { display: none; }
+@media (max-width: 900px) {
+  header { padding: 10px 12px; } header .role { display: none; }
+  .app { grid-template-columns: 1fr; padding: 12px 12px 86px; gap: 12px; }
+  .col[data-tab] { display: none; }
+  .col[data-tab].on { display: flex; }
+  .col.c-now { display: flex; }
+  .now { padding: 12px 14px; display: grid; grid-template-columns: 1fr auto; align-items: center; }
+  .now h4 { grid-column: 1 / -1; margin-bottom: 4px; }
+  .now .t { font-size: 18px; } .now .big { font-size: 30px; margin: 0; grid-row: 2 / 4; grid-column: 2; }
+  .now .bar { grid-column: 1 / -1; }
+  .prep .head img { width: 84px; }
+  .prep .head .t { font-size: 20px; }
+  .tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; background: #0b0c10; border-top: 1px solid var(--line); padding: 6px 6px 10px; z-index: 20; }
+  .tabbar button { flex: 1; background: none; border: 0; padding: 8px 0; font-size: 12px; font-weight: 700; color: var(--dim); display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; }
+  .tabbar button i { font-style: normal; font-size: 20px; }
+  .tabbar button.on { color: var(--acc); }
+  .tabbar .bd { position: absolute; top: 2px; left: 56%; background: var(--bad); color: #fff; font-size: 10px; border-radius: 8px; padding: 0 5px; }
+}
+.toast { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 20px); opacity: 0; background: #fff; color: #000; padding: 10px 16px; border-radius: 12px; font-weight: 700; transition: .25s; z-index: 50; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+<header><b>FEST<span>MON</span></b><span class="role">Помощник · закулисье · Маша</span><span class="sp"></span><span class="conn">● связь с пультом</span><span class="clock" id="clk"></span></header>
+
+<div class="app">
+  <div class="col c-now">
+    <div class="card now"><h4>Сейчас на сцене</h4><div><div class="t" id="nT"></div><div class="s" id="nS"></div></div><div class="big" id="nRem"></div><div class="bar"><i id="nBar"></i></div></div>
+  </div>
+  <div class="col on" data-tab="prep">
+    <div class="card prep" id="prep"></div>
+  </div>
+  <div class="col" data-tab="queue">
+    <div class="card"><h4>Очередь <span id="qCnt"></span></h4><div id="queue"></div></div>
+    <div class="card"><h4>Сообщения с пульта</h4><div id="msgs"></div>
+      <div class="quick"><button data-say="Участники на месте">✓ Все на месте</button><button data-say="Нужно ещё 2 минуты">⏱ Нужно 2 мин</button><button class="warn" data-say="Участника нет за кулисами!">⚠ Участника нет</button></div></div>
+  </div>
+</div>
+<nav class="tabbar"><button class="on" data-mt="prep"><i>🎭</i>Готовим</button><button data-mt="queue"><i>☰</i>Очередь<span class="bd">1</span></button></nav>
+<div class="toast" id="toast"></div>
+
+<script src="assets/common.js"></script>
+<script>
+(function () {
+  const { PROGRAM, state, mmss, cover } = FM;
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const toast = (t) => { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove("on"), 1800); };
+  FM.clock($("#clk"));
+  // отметки помощника — только в этом браузере
+  let ck = FM.store.get("h-ck", {}), called = FM.store.get("h-called", {}), ready = FM.store.get("h-ready", {});
+  const save = () => { FM.store.set("h-ck", ck); FM.store.set("h-called", called); FM.store.set("h-ready", ready); };
+  const MSGS = [{ who: "Оператор", t: "После 1.4 — короткая пауза, выносим кресло заранее", ago: "3 мин" }];
+
+  function items(p) {
+    const r = p.req || { props: [], light: "", wish: "" };
+    return [{ k: "here", t: "Участники за кулисами", who: "проверить по списку" }, ...r.props.map((x, i) => ({ k: "p" + i, t: x, who: "вынести на сцену" })), { k: "mic", t: "Микрофон / радиосистема", who: "если нужен" }];
+  }
+  function renderPrep() {
+    const ni = FM.nextIdx(), p = PROGRAM[ni];
+    if (!p) { $("#prep").innerHTML = "<h4>Готовим</h4><p>Программа закончилась 🎉</p>"; return; }
+    const its = items(p), done = its.filter((x) => ck[p.n + x.k]).length, all = done === its.length;
+    const r = p.req || {};
+    $("#prep").innerHTML = `<h4>Готовим следующий <span style="color:var(--next)">ДАЛЕЕ</span></h4>
+      <div class="head"><img src="${cover(p)}" alt=""><div><div class="t">${p.n} ${esc(p.title)}</div><div class="s">${esc(p.sub)} · ${mmss(p.dur)}</div></div></div>
+      <div class="eta">Выход через <b id="eta"></b></div>
+      <div class="sec"><h5>Чек-лист</h5>${its.map((x) => `<div class="chk ${ck[p.n + x.k] ? "ok" : ""}" data-ck="${p.n + x.k}"><span class="box">${ck[p.n + x.k] ? "✓" : ""}</span><span class="lb">${esc(x.t)}</span><span class="who">${x.who}</span></div>`).join("")}</div>
+      <div class="sec"><h5>💡 Свет</h5><div class="light">${esc(r.light || "обычный")}</div></div>
+      ${r.wish ? `<div class="sec"><h5>⚠ Особые пожелания</h5><div class="wish">${esc(r.wish)}</div></div>` : ""}
+      <button class="ready ${ready[p.n] ? "go" : ""}" id="ready" ${all || ready[p.n] ? "" : "disabled"}>${ready[p.n] ? "✓ Пульт знает: готовы к выходу" : all ? "Готовы к выходу → сообщить пульту" : "Отметьте всё, чтобы сообщить о готовности"}</button>
+      <div class="prog">${done} из ${its.length} готово</div>`;
+  }
+  function renderQueue() {
+    const ni = FM.nextIdx(), list = PROGRAM.slice(ni + 1, ni + 6);
+    $("#qCnt").textContent = list.length + " далее";
+    $("#queue").innerHTML = list.map((p) => {
+      const its = items(p), d = its.filter((x) => ck[p.n + x.k]).length;
+      return `<div class="q"><span class="n">${p.n || "—"}</span><div><b>${esc(p.title)}</b><span>${p.kind === "break" ? "антракт 15 мин" : esc(p.sub)}</span>
+        ${p.kind === "break" ? "" : `<div class="dots"><i class="${called[p.n] ? "ok" : "no"}">${called[p.n] ? "вызваны" : "не вызваны"}</i><i class="${d === its.length ? "ok" : ""}">реквизит ${d}/${its.length}</i></div>`}</div>
+        ${p.kind === "break" ? "<span></span>" : `<button class="call ${called[p.n] ? "on" : ""}" data-call="${p.n}">${called[p.n] ? "✓ вызваны" : "📣 Вызвать"}</button>`}</div>`;
+    }).join("");
+  }
+  function renderMsgs() { $("#msgs").innerHTML = MSGS.map((m) => `<div class="msg ${m.me ? "me" : ""}"><small>${m.who} · ${m.ago}</small>${esc(m.t)}</div>`).join(""); }
+
+  document.addEventListener("click", (e) => {
+    const c = e.target.closest("[data-ck]"); if (c) { ck[c.dataset.ck] = !ck[c.dataset.ck]; save(); renderPrep(); renderQueue(); }
+    const r = e.target.closest("#ready"); if (r && !r.disabled) { const p = PROGRAM[FM.nextIdx()]; ready[p.n] = true; save(); renderPrep(); toast("Пульт получил: " + p.n + " готовы к выходу"); }
+    const k = e.target.closest("[data-call]"); if (k) { called[k.dataset.call] = !called[k.dataset.call]; save(); renderQueue(); if (called[k.dataset.call]) toast("Объявлено в закулисье: " + k.dataset.call + " — подойти к сцене"); }
+    const m = e.target.closest("[data-say]"); if (m) { MSGS.push({ who: "Вы", t: m.dataset.say, ago: "сейчас", me: true }); renderMsgs(); toast("Отправлено на пульт"); }
+    const t = e.target.closest("[data-mt]"); if (t) { document.querySelectorAll("[data-mt]").forEach((x) => x.classList.toggle("on", x === t)); document.querySelectorAll(".col[data-tab]").forEach((c2) => c2.classList.toggle("on", c2.dataset.tab === t.dataset.mt)); }
+  });
+
+  let last = -1;
+  FM.onChange((s) => {
+    const live = PROGRAM[s.liveIdx], rem = live.dur - s.elapsed;
+    $("#nT").textContent = `${live.n} ${live.title}`; $("#nS").textContent = live.sub;
+    $("#nRem").textContent = "−" + mmss(rem); $("#nRem").classList.toggle("low", rem <= 30);
+    $("#nBar").style.width = (s.elapsed / live.dur) * 100 + "%";
+    if (last !== s.liveIdx) { last = s.liveIdx; renderPrep(); renderQueue(); renderMsgs(); }
+    const eta = $("#eta"); if (eta) eta.textContent = mmss(rem);
+  });
+})();
+</script>
+</body>
+</html>

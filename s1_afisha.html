@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FestMon · Сайт 1 · Афиша</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* Сайт для зрителей, вариант 1 «Афиша»: тёмный, фестивальный.
+ * ПК: слева липкая колонка «Сейчас/Далее», справа программа с фильтрами.
+ * Телефон: сверху липкая полоса «Сейчас», ниже программа. */
+:root { --bg: #0b0c12; --card: #151722; --card2: #1d2030; --line: #262a3a; --text: #f3f4f8; --dim: #9aa0b4; --a1: #35e0d2; --a2: #b46bff; --live: #ff4d6a; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 Montserrat, "Segoe UI", system-ui, sans-serif; }
+button, input { font: inherit; color: inherit; }
+a { color: var(--a1); }
+
+header { position: sticky; top: 0; z-index: 10; background: rgba(11,12,18,.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.hin { max-width: 1240px; margin: 0 auto; display: flex; align-items: center; gap: 18px; padding: 12px 20px; }
+.logo { font-weight: 900; letter-spacing: .08em; font-size: 20px; }
+.logo span { color: var(--a1); }
+nav { display: flex; gap: 4px; }
+nav a { color: var(--dim); text-decoration: none; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 14px; }
+nav a.on { color: var(--text); background: var(--card2); }
+.sp { flex: 1; }
+.livepill { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--live); }
+.livepill i { width: 8px; height: 8px; border-radius: 50%; background: var(--live); animation: bl 1.2s infinite; }
+@keyframes bl { 50% { opacity: .25; } }
+
+.main { max-width: 1240px; margin: 0 auto; padding: 24px 20px 60px; display: grid; grid-template-columns: 380px 1fr; gap: 28px; align-items: start; }
+.left { position: sticky; top: 76px; display: flex; flex-direction: column; gap: 16px; }
+.now { position: relative; border-radius: 22px; overflow: hidden; background: var(--card); }
+.now .img { aspect-ratio: 16/10; background-size: cover; background-position: center; position: relative; }
+.now .img::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 40%, rgba(11,12,18,.95)); }
+.now .tag { position: absolute; top: 14px; left: 14px; z-index: 1; display: flex; align-items: center; gap: 8px; background: var(--live); color: #fff; font-weight: 800; font-size: 12px; letter-spacing: .1em; padding: 5px 11px; border-radius: 99px; }
+.now .tag i { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: bl 1.2s infinite; }
+.now .body { padding: 0 20px 20px; margin-top: -70px; position: relative; z-index: 1; }
+.now .n { color: var(--a1); font-weight: 700; font-size: 13px; letter-spacing: .06em; }
+.now h2 { margin: 2px 0 2px; font-size: 30px; font-weight: 900; line-height: 1.1; }
+.now .s { color: var(--dim); }
+.prog { height: 6px; border-radius: 3px; background: var(--card2); margin: 16px 0 6px; overflow: hidden; }
+.prog i { display: block; height: 100%; background: linear-gradient(90deg, var(--a1), var(--a2)); transition: width 1s linear; }
+.tm { display: flex; justify-content: space-between; font-size: 13px; color: var(--dim); font-weight: 600; }
+.nx { background: var(--card); border-radius: 18px; padding: 16px; display: flex; gap: 14px; align-items: center; }
+.nx img { width: 96px; aspect-ratio: 16/10; border-radius: 10px; object-fit: cover; }
+.nx small { color: var(--dim); font-size: 11px; letter-spacing: .12em; font-weight: 700; }
+.nx b { display: block; font-size: 17px; }
+.nx span { color: var(--dim); font-size: 13px; }
+.cta { display: block; text-align: center; padding: 14px; border-radius: 14px; background: linear-gradient(90deg, var(--a1), var(--a2)); color: #08101a; font-weight: 800; text-decoration: none; }
+
+.tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+.tools input { flex: 1; min-width: 180px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+.chip { background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 7px 14px; cursor: pointer; font-weight: 600; font-size: 13px; }
+.chip.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+h3.blk { margin: 22px 0 10px; font-size: 13px; letter-spacing: .14em; color: var(--dim); text-transform: uppercase; display: flex; justify-content: space-between; }
+.item { display: grid; grid-template-columns: 64px 120px 1fr auto; gap: 16px; align-items: center; padding: 12px; border-radius: 16px; margin-bottom: 8px; background: var(--card); border: 1px solid transparent; transition: border-color .15s; }
+.item:hover { border-color: var(--line); }
+.item .t { font: 800 18px Montserrat; text-align: center; }
+.item .t small { display: block; font-size: 11px; font-weight: 600; color: var(--dim); }
+.item img { width: 120px; aspect-ratio: 16/10; object-fit: cover; border-radius: 10px; display: block; }
+.item b { font-size: 17px; display: block; }
+.item .meta { color: var(--dim); font-size: 13px; }
+.item .meta em { font-style: normal; color: var(--a1); font-weight: 700; margin-right: 6px; }
+.star { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: none; cursor: pointer; font-size: 18px; color: var(--dim); }
+.star.on { color: #ffd54f; border-color: #ffd54f; }
+.item.done { opacity: .45; }
+.item.live { border-color: var(--live); background: linear-gradient(90deg, rgba(255,77,106,.14), var(--card)); }
+.item.live .t { color: var(--live); }
+.item.brk { background: repeating-linear-gradient(135deg, var(--card) 0 12px, #181a26 12px 24px); }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 30px); opacity: 0; background: #fff; color: #000; padding: 10px 18px; border-radius: 12px; font-weight: 700; transition: .25s; z-index: 50; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- телефон ---------- */
+@media (max-width: 860px) {
+  nav { display: none; }
+  .main { grid-template-columns: 1fr; padding: 12px 12px 40px; gap: 14px; }
+  .left { position: static; }
+  .now { display: grid; grid-template-columns: 110px 1fr; align-items: center; border-radius: 18px; }
+  .now .img { aspect-ratio: auto; height: 100%; min-height: 120px; }
+  .now .img::after { display: none; }
+  .now .tag { top: 8px; left: 8px; font-size: 10px; padding: 3px 8px; }
+  .now .body { margin: 0; padding: 12px 14px; }
+  .now h2 { font-size: 21px; }
+  .nx { padding: 10px; } .nx img { width: 74px; }
+  .item { grid-template-columns: 52px 1fr auto; gap: 10px; padding: 10px; }
+  .item img { display: none; }
+  .item .t { font-size: 15px; }
+  .item b { font-size: 15px; }
+  .star { width: 34px; height: 34px; }
+  .stick { position: sticky; top: 52px; z-index: 5; }
+}
+</style>
+</head>
+<body>
+<header><div class="hin">
+  <div class="logo">FEST<span>MON</span></div>
+  <nav><a class="on" href="#">Программа</a><a href="#">Голосование</a><a href="#">Как добраться</a></nav>
+  <span class="sp"></span><span class="livepill"><i></i>ИДЁТ ПРЯМО СЕЙЧАС</span>
+</div></header>
+
+<div class="main">
+  <aside class="left">
+    <div class="now stick" id="now"><div class="img" id="nowImg"><span class="tag"><i></i>НА СЦЕНЕ</span></div>
+      <div class="body"><div class="n" id="nowN"></div><h2 id="nowT"></h2><div class="s" id="nowS"></div>
+        <div class="prog"><i id="nowP"></i></div><div class="tm"><span id="nowEl"></span><span id="nowRem"></span></div></div></div>
+    <div class="nx" id="nx"></div>
+    <a class="cta" href="#">🗳 Проголосовать за номер</a>
+  </aside>
+  <section>
+    <div class="tools"><input id="q" placeholder="Найти номер или участника…"><span id="chips"></span></div>
+    <div id="list"></div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="assets/common.js"></script>
+<script>
+(function () {
+  const { PROGRAM, state, mmss, cover } = FM;
+  const $ = (s) => document.querySelector(s);
+  const NOM = { ГД: "Групповой танец", ОРИДЖ: "Ориджинал", ОВ: "Вокал", ОЗ: "Одиночное" };
+  const start = new Date(); start.setHours(18, 0, 0, 0);
+  const at = (i) => { let s = 0; for (let k = 0; k < i; k++) s += PROGRAM[k].dur; return new Date(start.getTime() + s * 1000); };
+  const hm = (d) => d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  let filt = "all", fav = new Set(FM.store.get("s1-fav", []));
+  $("#chips").innerHTML = ["all", "ГД", "ОРИДЖ", "ОВ", "ОЗ", "fav"].map((k) => `<button class="chip ${k === "all" ? "on" : ""}" data-f="${k}">${{ all: "Все", fav: "★ Мои" }[k] || NOM[k]}</button>`).join(" ");
+
+  function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove("on"), 1800); }
+  function renderList() {
+    const q = $("#q").value.trim().toLowerCase();
+    let html = "", blk = "";
+    PROGRAM.forEach((p, i) => {
+      const b = p.n.startsWith("2") ? "Блок 2" : "Блок 1";
+      if (filt === "fav" && !fav.has(p.n)) return;
+      if (filt !== "all" && filt !== "fav" && p.nom !== filt) return;
+      if (q && !(p.title + " " + p.sub + " " + p.n).toLowerCase().includes(q)) return;
+      if (b !== blk) { blk = b; html += `<h3 class="blk"><span>${b}</span><span>${b === "Блок 1" ? "18:00" : ""}</span></h3>`; }
+      const live = p.status === "live";
+      html += `<div class="item ${p.status} ${p.kind === "break" ? "brk" : ""}">
+        <div class="t">${live ? "сейчас" : hm(at(i))}<small>${mmss(p.dur)}</small></div><img src="${cover(p)}" alt="">
+        <div><b>${p.n ? p.n + " · " : ""}${p.title}</b><div class="meta">${p.nom ? `<em>${NOM[p.nom]}</em>` : ""}${p.sub}</div></div>
+        ${p.n ? `<button class="star ${fav.has(p.n) ? "on" : ""}" data-star="${p.n}" title="Напомнить">${fav.has(p.n) ? "★" : "☆"}</button>` : "<span></span>"}</div>`;
+    });
+    $("#list").innerHTML = html || `<p style="color:var(--dim)">Ничего не нашлось.</p>`;
+  }
+  document.addEventListener("click", (e) => {
+    const c = e.target.closest("[data-f]");
+    if (c) { filt = c.dataset.f; document.querySelectorAll(".chip").forEach((x) => x.classList.toggle("on", x === c)); renderList(); }
+    const s = e.target.closest("[data-star]");
+    if (s) { const n = s.dataset.star; if (fav.has(n)) fav.delete(n); else { fav.add(n); toast("Напомним за 5 минут до выхода " + n); } FM.store.set("s1-fav", [...fav]); renderList(); }
+    if (e.target.closest("a[href='#']")) e.preventDefault();
+  });
+  $("#q").oninput = renderList;
+
+  let last = -1;
+  FM.onChange((s) => {
+    const live = PROGRAM[s.liveIdx], nx = PROGRAM[FM.nextIdx()];
+    $("#nowImg").style.backgroundImage = `url("${cover(live)}")`;
+    $("#nowN").textContent = `${live.n} · ${NOM[live.nom] || ""}`; $("#nowT").textContent = live.title; $("#nowS").textContent = live.sub;
+    $("#nowP").style.width = (s.elapsed / live.dur) * 100 + "%"; $("#nowEl").textContent = mmss(s.elapsed); $("#nowRem").textContent = "осталось " + mmss(live.dur - s.elapsed);
+    $("#nx").innerHTML = nx ? `<img src="${cover(nx)}" alt=""><div><small>ДАЛЕЕ · через ${mmss(live.dur - s.elapsed)}</small><b>${nx.n} ${nx.title}</b><span>${nx.sub}</span></div>` : "";
+    if (last !== s.liveIdx) { last = s.liveIdx; renderList(); }
+  });
+})();
+</script>
+</body>
+</html>
