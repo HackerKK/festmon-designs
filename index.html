@@ -93,6 +93,24 @@ body.noinfo .info { margin-right: -340px; }
 .formbox iframe { width: 100%; height: 1950px; border: 0; display: block; }
 .formnote { color: var(--dim); font-size: 13px; margin-top: 10px; }
 
+/* страница-описание перед группой */
+.about .kicker { display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: .14em; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; }
+.about h1 { font-size: clamp(28px, 4.4vw, 46px); line-height: 1.1; margin: 0 0 12px; }
+.about .lead2 { font-size: 18px; color: #c8ccd6; max-width: 820px; margin: 0 0 26px; }
+.about .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.about .facts div { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+.about .facts b { display: block; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); margin-bottom: 6px; }
+.about .facts span { font-size: 15px; }
+.about h3 { margin: 28px 0 8px; font-size: 17px; }
+.about ul.look { margin: 0; padding-left: 20px; color: #c8ccd6; }
+.about ul.look li { margin: 4px 0; }
+.about .vars { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.about .vars button { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+.about .vars button:hover { border-color: var(--accent); }
+.about .vars b { color: var(--accent); margin-right: 6px; }
+.nav button.sec { border-style: dashed; color: var(--dim); }
+.nav button.sec.on { color: var(--text); border-style: solid; }
+
 /* слайд «ПК + телефон» */
 .dview { flex: 1; min-width: 0; display: flex; flex-direction: column; background: radial-gradient(900px 500px at 50% 0%, #1b1e2a, #0b0c10); }
 .dtools { flex: none; display: flex; gap: 6px; justify-content: center; padding: 10px; }
@@ -140,8 +158,10 @@ body.noinfo .info { margin-right: -340px; }
       <div><b>③ Проголосуйте</b><span>Последний слайд — короткая форма: что понравилось больше и почему.</span></div>
     </div>
     <div class="groups" id="groups"></div>
-    <div class="cta"><button class="btn pri" data-go="1">Начать с варианта A →</button><button class="btn" data-go="vote">Сразу к голосованию</button></div>
+    <div class="cta"><button class="btn pri" data-go="about-panel">Начать: пульт оператора →</button><button class="btn" data-go="vote">Сразу к голосованию</button></div>
   </div></section>
+
+  <section class="slide page about" id="s-about"><div class="inner" id="aboutBody"></div></section>
 
   <section class="slide design" id="s-design">
     <div class="view" id="view"><iframe id="frame" title="Макет"></iframe><div class="scaled" id="scaled"></div></div>
@@ -224,19 +244,46 @@ body.noinfo .info { margin-right: -340px; }
       hl: "Что попробовать", h: "Листайте кружки и карусель, нажмите ♡ и «Голосовать».",
       p: ["Привычно для телефона, удобно одной рукой", "Сразу видно, сколько ждать"], m: ["На ПК много пустого места", "Яркий фон может мешать читать"] },
     { k: "H", f: "h_helper.html", t: "Окно помощника", g: 5, dev: 1, short: "Закулисье: кого готовить, что вынести, связь с пультом",
-      d: "Для помощника за кулисами. «Сейчас на сцене» с отсчётом и крупная карточка «Готовим следующий»: выход через N, чек-лист (участники, реквизит, микрофон), свет, особые пожелания и кнопка «Готовы к выходу». Очередь с кнопкой «Вызвать» и быстрые сообщения на пульт.",
-      hl: "Что попробовать", h: "Отметьте пункты чек-листа — кнопка «Готовы» станет активной. «📣 Вызвать» в очереди, быстрые ответы пульту. На телефоне разделы переключаются внизу.",
+      d: "Для помощника за кулисами. «Сейчас на сцене» с отсчётом и крупная карточка «Готовим следующий»: выход через N, чек-лист (участники, реквизит, микрофон), свет, особые пожелания и кнопка «Готовы к выходу». Красная кнопка «⛔ Остановить номер» — уведомление на пульт (нужно удержать 1,5 с, есть «Отменить» и причина). Очередь с кнопками «Вызвать» и «⇅» — заявка на перенос номера (перед/после другого, в конец блока, снять), статус заявки виден. Быстрые сообщения на пульт.",
+      hl: "Что попробовать", h: "Отметьте пункты чек-листа — кнопка «Готовы» станет активной. Удержите «Остановить номер». Нажмите ⇅ у номера в очереди и отправьте заявку — через несколько секунд «оператор» её примет. «📣 Вызвать» в очереди, быстрые ответы пульту. На телефоне разделы переключаются внизу.",
       p: ["Помощник видит только своё", "Пульт сразу знает, что номер готов"], m: ["Нужен телефон у помощника", "Сеть за кулисами должна быть стабильной"] },
   ];
-  const SLIDES = ["intro", ...D.map((d) => d.k.toLowerCase()), "vote"];
+  // Страница-описание перед каждой группой: для чего это, кто смотрит, на что обратить внимание.
+  const ABOUT = {
+    1: { id: "about-panel", nav: "① Пульт", kicker: "Часть 1 · варианты A–G", title: "Панель оператора",
+      lead: "Главный экран FestMon. За ним сидит оператор и ведёт весь фестиваль: запускает номера по программе, выводит видео и картинки на проектор, управляет музыкой и громкостью.",
+      facts: [["Кто смотрит", "Оператор за ноутбуком в зале. Один человек, весь вечер."], ["Где", "Тёмный зал, рядом звук и свет. Ошибка видна всем зрителям сразу."], ["Что важно", "Крупные кнопки эфира, сразу видно «что идёт» и «что дальше», лишнее убирается."]],
+      look: ["Понятно ли за секунду, что сейчас на экране и что пойдёт следующим?", "Легко ли нажать «Пуск», «Следующий», «Стоп» и не промахнуться?", "Удобно ли прятать и показывать второстепенные панели?", "A–D отличаются стилем, E–G — расположением (цвет одинаковый)."], groups: [1, 2] },
+    3: { id: "about-projector", nav: "② Проектор", kicker: "Часть 2", title: "Экран проектора",
+      lead: "То, что видит весь зал на большом экране. Оператор переключает это со своего пульта: номер, заставки, рекламу партнёров, таймер антракта, QR-код для голосования.",
+      facts: [["Кто смотрит", "Все зрители и участники в зале."], ["Где", "Большой экран над сценой, видно издалека и в темноте."], ["Что важно", "Читается с последнего ряда, красиво, не мешает выступлению."]],
+      look: ["Хватает ли сцен (заставка, антракт, реклама, «Спасибо!»)?", "Что ещё нужно показывать на экране?", "Не слишком ли много эффектов?"], groups: [3] },
+    4: { id: "about-site", nav: "③ Сайт", kicker: "Часть 3 · варианты S1–S3", title: "Сайт с программой",
+      lead: "Публичная страница фестиваля. Её открывают по QR-коду с экрана или афиши, чтобы узнать, что сейчас на сцене, когда выступит «мой» номер, и проголосовать.",
+      facts: [["Кто смотрит", "Зрители, участники и их родители, гости, организаторы."], ["Где", "В основном с телефона, в зале и в фойе. Иногда с компьютера заранее."], ["Что важно", "Сразу видно «сейчас» и «далее», удобно найти свой номер, понятно на маленьком экране."]],
+      look: ["Каждый вариант показан сразу на ПК и на телефоне — смотрите оба.", "Быстро ли находится «мой» номер и время выхода?", "Удобно ли пользоваться одной рукой?"], groups: [4] },
+    5: { id: "about-helper", nav: "④ Помощник", kicker: "Часть 4", title: "Окно помощника",
+      lead: "Для помощника за кулисами. Он готовит следующий номер: зовёт участников, проверяет реквизит и по чек-листу видит, когда номер готов к выходу. Связан с пультом: может подать сигнал «Остановить номер» и попросить перенести номер.",
+      facts: [["Кто смотрит", "Волонтёр или помощник режиссёра за кулисами."], ["Где", "На своём телефоне, на ходу, в полутьме закулисья."], ["Что важно", "Крупно, понятно с одного взгляда, случайно ничего не нажать."]],
+      look: ["Понятно ли по чек-листу, что номер готов?", "Удобно ли подать «Стоп» и заявку на перенос?", "Чего не хватает за кулисами?"], groups: [5] },
+  };
+  const SLIDES = [{ name: "intro" }];
+  D.forEach((d) => {
+    const a = ABOUT[d.g === 2 ? 1 : d.g];
+    if (a && !SLIDES.some((x) => x.about === a)) SLIDES.push({ name: a.id, about: a });
+    SLIDES.push({ name: d.k.toLowerCase(), d });
+  });
+  SLIDES.push({ name: "vote" });
+  const idxOf = (name) => SLIDES.findIndex((x) => x.name === name);
   let cur = 0;
   const $ = (s) => document.querySelector(s);
 
   // ---------- навигация ----------
-  $("#nav").innerHTML = `<button data-go="0">Начало</button>` +
-    D.map((d, i) => `<button data-go="${i + 1}" title="${d.t}"><b>${d.k}</b>${d.t}</button>`).join("") +
-    `<button class="vote" data-go="vote">🗳 Голосование</button>`;
-  const tiles = (g) => D.filter((d) => d.g === g).map((d) => `<button class="tile" data-go="${D.indexOf(d) + 1}">
+  $("#nav").innerHTML = SLIDES.map((x) => x.name === "intro" ? `<button data-go="intro">Начало</button>`
+    : x.name === "vote" ? `<button class="vote" data-go="vote">🗳 Голосование</button>`
+    : x.about ? `<button class="sec" data-go="${x.name}" title="${x.about.title}: для чего это">${x.about.nav}</button>`
+    : `<button data-go="${x.name}" title="${x.d.t}"><b>${x.d.k}</b>${x.d.t}</button>`).join("");
+  const tiles = (g) => D.filter((d) => d.g === g).map((d) => `<button class="tile" data-go="${d.k.toLowerCase()}">
       <div class="th"><iframe src="${d.f}" loading="lazy" tabindex="-1" title="${d.t}"></iframe></div>
       <div class="tx"><b><i>${d.k}</i>${d.t}</b><span>${d.short}</span></div></button>`).join("");
   $("#groups").innerHTML = `<h2>Разный стиль</h2><p>Различаются цветом и характером.</p><div class="tiles">${tiles(1)}</div>
@@ -244,23 +291,32 @@ body.noinfo .info { margin-right: -340px; }
     <h2>Экран проектора</h2><p>Что видит зал: сцены, слои, эффекты.</p><div class="tiles">${tiles(3)}</div>
     <h2>Сайт с программой для зрителей</h2><p>Три варианта. На слайде каждый показан сразу на ПК и на телефоне.</p><div class="tiles">${tiles(4)}</div>
     <h2>Окно помощника</h2><p>Для закулисья — тоже на ПК и на телефоне.</p><div class="tiles">${tiles(5)}</div>`;
-  $("#voteList").innerHTML = D.map((d, i) => `<button data-go="${i + 1}"><b>${d.k} · ${d.t}</b><span>↩ открыть макет</span></button>`).join("");
+  $("#voteList").innerHTML = D.map((d) => `<button data-go="${d.k.toLowerCase()}"><b>${d.k} · ${d.t}</b><span>↩ открыть макет</span></button>`).join("");
 
   function go(i) {
-    if (i === "vote") i = SLIDES.length - 1;
+    if (typeof i === "string" && !/^\d+$/.test(i)) i = Math.max(0, idxOf(i));
     i = Math.max(0, Math.min(SLIDES.length - 1, +i));
     cur = i;
-    const name = SLIDES[i];
+    const sl = SLIDES[i], name = sl.name;
     document.querySelectorAll(".slide").forEach((s) => s.classList.remove("on"));
     document.querySelectorAll("#nav [data-go]").forEach((b, j) => b.classList.toggle("on", j === i));
     const active = document.querySelectorAll("#nav [data-go]")[i];
     if (active) active.scrollIntoView({ inline: "nearest", block: "nearest" });
     if (name === "intro") $("#s-intro").classList.add("on");
+    else if (sl.about) {
+      const a = sl.about, list = D.filter((d) => a.groups.includes(d.g));
+      $("#aboutBody").innerHTML = `<span class="kicker">${a.kicker}</span><h1>${a.title}</h1><p class="lead2">${a.lead}</p>
+        <div class="facts">${a.facts.map(([k, v]) => `<div><b>${k}</b><span>${v}</span></div>`).join("")}</div>
+        <h3>На что смотреть</h3><ul class="look">${a.look.map((x) => `<li>${x}</li>`).join("")}</ul>
+        <h3>${list.length > 1 ? "Варианты" : "Макет"}</h3><div class="vars">${list.map((d) => `<button data-go="${d.k.toLowerCase()}"><b>${d.k}</b>${d.t}</button>`).join("")}</div>
+        <div class="cta"><button class="btn pri" data-go="${list[0].k.toLowerCase()}">Смотреть ${list.length > 1 ? "варианты" : "макет"} →</button></div>`;
+      $("#s-about").classList.add("on"); $("#s-about").scrollTop = 0;
+    }
     else if (name === "vote") {
       $("#s-vote").classList.add("on");
       if (!$("#form").src) { $("#form").src = FORM + "?iframe=1"; $("#formLink").href = FORM; }
     } else {
-      const d = D[i - 1];
+      const d = sl.d;
       const tag = { 1: "пульт · разный стиль", 2: "пульт · разное расположение", 3: "экран проектора", 4: "сайт для зрителей", 5: "закулисье" }[d.g];
       const info = `<h2><i>${d.k}</i>${d.t}</h2><span class="tag">${tag}</span>
         <p>${d.d}</p><h4 class="t">${d.hl || "Как прятать панели"}</h4><p>${d.h}</p>
@@ -281,7 +337,7 @@ body.noinfo .info { margin-right: -340px; }
         fit();
       }
     }
-    $("#count").textContent = i === 0 ? "" : i === SLIDES.length - 1 ? "" : `${i} / ${D.length}`;
+    $("#count").textContent = sl.d ? `${D.indexOf(sl.d) + 1} / ${D.length}` : "";
     $("#prev").disabled = i === 0; $("#next").disabled = i === SLIDES.length - 1;
     if (location.hash.slice(1) !== name) history.replaceState(null, "", "#" + name);
   }
@@ -295,7 +351,7 @@ body.noinfo .info { margin-right: -340px; }
     if (e.key === "PageUp" || e.key === "ArrowLeft") go(cur - 1);
     if (e.key === "i" || e.key === "ш") $("#infoBtn").click();
   });
-  addEventListener("hashchange", () => { const j = SLIDES.indexOf(location.hash.slice(1)); if (j >= 0 && j !== cur) go(j); });
+  addEventListener("hashchange", () => { const j = idxOf(location.hash.slice(1)); if (j >= 0 && j !== cur) go(j); });
 
   // ---------- масштаб макета ----------
   // Макеты рассчитаны на широкий экран. Если места меньше 1280×700 — рисуем
@@ -326,7 +382,7 @@ body.noinfo .info { margin-right: -340px; }
   document.addEventListener("click", (e) => { const b = e.target.closest("[data-dm]"); if (b) { dmode = b.dataset.dm; document.querySelectorAll("[data-dm]").forEach((x) => x.classList.toggle("on", x === b)); fitDev(); } });
   addEventListener("resize", () => { fit(); fitDev(); });
   if (innerWidth > 1300) { document.body.classList.remove("noinfo"); $("#infoBtn").classList.add("on"); }
-  const start = SLIDES.indexOf(location.hash.slice(1));
+  const start = idxOf(location.hash.slice(1));
   go(start >= 0 ? start : 0);
   fit();
 })();
