@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FestMon · B · Докируемая сетка</title>
+<link rel="stylesheet" href="assets/panels.css">
+<style>
+/* Графит + янтарный акцент: «монтажка», всё перетаскивается. */
+:root {
+  --bg: #121316; --panel: #1b1c21; --panel2: #24262d; --field: #0d0e11;
+  --border: #30323b; --border-hi: #454856; --text: #eceef3; --dim: #8e92a0;
+  --accent: #ffb547; --accent-fg: #2a1a00; --accent-dim: #3a2a10;
+  --ok: #3ddc84; --warn: #ffd54f; --bad: #e5484d; --blue: #5aa9ff; --live: #ff3b47;
+  --r: 5px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.35 "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+button { font-family: inherit; }
+
+/* ---------- верх ---------- */
+.top { height: 46px; display: flex; align-items: center; gap: 6px; padding: 0 10px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.logo { font-weight: 800; letter-spacing: .1em; margin-right: 10px; }
+.logo span { color: var(--accent); }
+.menu { position: relative; }
+.mbtn, .preset { background: none; border: 1px solid transparent; color: var(--text); border-radius: var(--r); height: 30px; padding: 0 10px; cursor: pointer; font-size: 13px; }
+.mbtn:hover, .preset:hover { background: var(--panel2); }
+.preset { border-color: var(--border); color: var(--dim); }
+.preset.on { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.preset kbd { font: 10px Consolas, monospace; opacity: .6; margin-left: 4px; }
+.drop { position: absolute; top: 34px; left: 0; min-width: 270px; background: var(--panel); border: 1px solid var(--border-hi); border-radius: 8px; padding: 6px; box-shadow: 0 12px 30px rgba(0,0,0,.5); display: none; z-index: 40; }
+.menu.open .drop { display: block; }
+.drop label { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: var(--r); cursor: pointer; font-size: 13px; }
+.drop label:hover { background: var(--panel2); }
+.drop label kbd { margin-left: auto; font: 11px Consolas, monospace; color: var(--dim); }
+.drop input { accent-color: var(--accent); }
+.drop hr { border: 0; border-top: 1px solid var(--border); margin: 6px 0; }
+.drop .zl { color: var(--dim); font-size: 11px; margin-left: 4px; }
+.sep { width: 1px; height: 24px; background: var(--border); margin: 0 6px; }
+.tray { display: flex; gap: 4px; }
+.tray button { background: var(--panel2); border: 1px dashed var(--border-hi); color: var(--dim); border-radius: 99px; padding: 2px 10px; font-size: 12px; cursor: pointer; }
+.tray button:hover { color: var(--text); border-color: var(--accent); }
+.sp { flex: 1; }
+.status { display: flex; align-items: center; gap: 14px; }
+.lamp { font-weight: 800; letter-spacing: .1em; font-size: 13px; padding: 5px 12px; border-radius: 4px; background: var(--field); color: var(--dim); border: 1px solid var(--border); }
+.lamp.live { background: var(--live); color: #fff; border-color: var(--live); box-shadow: 0 0 16px rgba(255,59,71,.5); }
+.lamp.paused { color: var(--warn); border-color: var(--warn); }
+.lamp.standby { color: var(--blue); border-color: var(--blue); }
+.clock { font: 700 18px Consolas, monospace; }
+
+/* ---------- сетка ---------- */
+.grid { height: calc(100% - 46px); display: grid; grid-template-columns: auto 380px 1fr auto; grid-template-rows: 1fr auto; gap: 6px; padding: 6px; }
+.zone { display: flex; gap: 6px; min-width: 0; min-height: 0; border-radius: 8px; transition: background .15s, outline-color .15s; outline: 2px dashed transparent; outline-offset: -2px; }
+.zone.v { flex-direction: column; width: 330px; }
+.zone.h { flex-direction: row; grid-column: 2 / 4; height: 236px; }
+.zone.empty { width: 0; height: 0; }
+.zone.v.empty { width: 0; }
+.zone.h.empty { height: 0; }
+body.dragging .zone { outline-color: var(--border-hi); background: rgba(255,181,71,.03); }
+body.dragging .zone.v.empty { width: 120px; }
+body.dragging .zone.h.empty { height: 80px; }
+body.dragging .zone.empty::before { content: "Перетащите сюда"; margin: auto; color: var(--dim); font-size: 12px; }
+.zone.over { outline-color: var(--accent) !important; background: rgba(255,181,71,.08) !important; }
+#zL { grid-column: 1; grid-row: 1 / 3; }
+#zR { grid-column: 4; grid-row: 1 / 3; }
+
+.pnl { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; min-height: 0; min-width: 0; flex: 1 1 0; overflow: hidden; }
+.zone.h .pnl { min-width: 240px; }
+.pnl.col { flex: 0 0 auto; }
+.zone.h .pnl.col { flex: 0 0 38px; min-width: 38px; }
+.pnl.col .pc { display: none; }
+.zone.h .pnl.col .ph { writing-mode: vertical-rl; height: 100%; padding: 10px 0; }
+.zone.h .pnl.col .ph .acts button:not(.cl) { display: none; }
+.ph { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 6px 0 10px; border-bottom: 1px solid var(--border); flex: none; cursor: grab; user-select: none; }
+.pnl.col .ph { border-bottom: 0; }
+.ph:active { cursor: grabbing; }
+.ph .grab { color: var(--border-hi); letter-spacing: -2px; }
+.ph b { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+.ph .ico { color: var(--accent); }
+.ph .acts { margin-left: auto; display: flex; }
+.ph .acts button { background: none; border: 0; color: var(--dim); width: 24px; height: 24px; border-radius: 4px; cursor: pointer; }
+.ph .acts button:hover { background: var(--panel2); color: var(--text); }
+.pc { flex: 1; overflow: auto; padding: 10px; }
+.pnl.dragged { opacity: .4; }
+
+/* ---------- ранданун ---------- */
+.rd { grid-column: 2; grid-row: 1; }
+.rd .pc { padding: 6px; }
+.row { display: grid; grid-template-columns: 22px 96px 1fr auto; gap: 10px; align-items: center; padding: 6px; border-radius: 6px; margin-bottom: 4px; border: 1px solid transparent; cursor: pointer; position: relative; }
+.row:hover { background: var(--panel2); }
+.row .idx { font: 600 11px Consolas, monospace; color: var(--dim); text-align: right; }
+.row img { width: 96px; height: 54px; object-fit: cover; border-radius: 4px; display: block; }
+.row .t { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .s { font-size: 12px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .r { text-align: right; font: 600 13px Consolas, monospace; }
+.row .r small { display: block; color: var(--dim); font-size: 11px; }
+.row.done { opacity: .45; }
+.row.live { background: linear-gradient(90deg, rgba(255,59,71,.2), rgba(255,59,71,.04)); border-color: var(--live); }
+.row.live::before { content: ""; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 4px; background: var(--live); border-radius: 6px 0 0 6px; }
+.row.next { border-color: var(--accent); border-style: dashed; }
+.row .pill { display: inline-block; font: 800 10px "Segoe UI"; letter-spacing: .08em; padding: 1px 6px; border-radius: 3px; margin-right: 6px; vertical-align: 1px; }
+.row.live .pill { background: var(--live); color: #fff; }
+.row.next .pill { background: var(--accent); color: var(--accent-fg); }
+.row .pb { position: absolute; left: 6px; right: 6px; bottom: 2px; height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
+.row .pb i { display: block; height: 100%; background: var(--live); }
+.row.sel { box-shadow: 0 0 0 2px var(--accent) inset; }
+.row.brk .t { color: var(--dim); font-style: italic; }
+.blkh { font-size: 11px; font-weight: 800; letter-spacing: .1em; color: var(--dim); padding: 8px 6px 4px; text-transform: uppercase; display: flex; justify-content: space-between; }
+
+/* ---------- эфир (центр) ---------- */
+.main { grid-column: 3; grid-row: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 0; }
+.mons { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.mon { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; min-height: 0; }
+.mon-h { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--dim); margin-bottom: 6px; }
+.mon-h b { color: var(--text); letter-spacing: .06em; }
+.mon-h .tag { font: 800 10px "Segoe UI"; padding: 2px 6px; border-radius: 3px; }
+.pvw .tag { background: var(--accent); color: var(--accent-fg); }
+.pgm .tag { background: var(--live); color: #fff; }
+.mon-h .sp { flex: 1; }
+.scr { position: relative; flex: 1; min-height: 0; background: #000; border-radius: 4px; overflow: hidden; display: grid; place-items: center; }
+.scr .box { position: relative; width: 100%; aspect-ratio: 16/9; max-height: 100%; }
+.scr img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scr .cap { position: absolute; left: 10px; bottom: 8px; font-weight: 700; font-size: 18px; text-shadow: 0 1px 6px #000; }
+.scr .tc { position: absolute; right: 8px; top: 8px; font: 700 14px Consolas, monospace; background: rgba(0,0,0,.6); padding: 2px 7px; border-radius: 3px; }
+.scr .sb { position: absolute; inset: 0; display: none; place-items: center; background: linear-gradient(135deg, #2a1a00, #0d0e11); color: var(--accent); font-weight: 800; letter-spacing: .3em; font-size: 28px; }
+.pgm.standby .sb { display: grid; }
+.pgm.on .scr { box-shadow: 0 0 0 2px var(--live); }
+
+.tbar { flex: none; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; }
+.btns { display: flex; gap: 8px; }
+.tb { position: relative; height: 64px; min-width: 92px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border-hi); background: var(--panel2); color: var(--text); font-weight: 800; font-size: 14px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.tb span { font-size: 22px; line-height: 1; }
+.tb kbd { position: absolute; top: 3px; right: 5px; font: 10px Consolas, monospace; color: var(--dim); }
+.tb:hover { border-color: var(--text); }
+.tb:active { transform: scale(.97); }
+.tb.play { background: #1f6b3a; border-color: var(--ok); min-width: 128px; }
+.tb.play.on { box-shadow: 0 0 0 2px var(--ok); }
+.tb.pause.on { color: var(--warn); border-color: var(--warn); background: #3a3114; }
+.tb.stop { background: #3a1a1d; border-color: var(--bad); color: #ff8a8f; }
+.tb.next { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); min-width: 128px; }
+.tb.standby.on { color: var(--blue); border-color: var(--blue); background: #142c3a; }
+.levels { display: grid; grid-template-columns: auto 1fr auto; gap: 6px 10px; align-items: center; font-size: 12px; min-width: 0; }
+.levels > span { color: var(--dim); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
+.levels > b { font: 700 13px Consolas, monospace; min-width: 44px; text-align: right; }
+.levels input { width: 100%; accent-color: var(--accent); }
+.meter { position: relative; height: 10px; background: var(--field); border-radius: 2px; overflow: hidden; }
+.meter .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #2ea043, #2ea043 68%, #d9a300 80%, #e5484d 95%); transition: width .08s; }
+.meter .peak { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; }
+.levels .db { font: 11px Consolas, monospace; color: var(--dim); }
+
+.toast-hint { position: fixed; right: 12px; bottom: 12px; font-size: 12px; color: var(--dim); }
+::-webkit-scrollbar { width: 9px; height: 9px; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; } ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">FEST<span>MON</span></div>
+  <div class="menu" id="viewMenu"><button class="mbtn">Вид ▾</button><div class="drop" id="viewDrop"></div></div>
+  <div class="sep"></div>
+  <button class="preset" data-preset="prep">Подготовка<kbd>Alt+1</kbd></button>
+  <button class="preset" data-preset="show">Эфир<kbd>Alt+2</kbd></button>
+  <button class="preset" data-preset="audio">Звук<kbd>Alt+3</kbd></button>
+  <button class="preset" data-preset="mine" id="pMine">Моя<kbd>Alt+4</kbd></button>
+  <button class="mbtn" id="saveMine" title="Запомнить текущую раскладку как «Моя» (Ctrl+S)">💾</button>
+  <div class="sep"></div>
+  <div class="tray" id="tray"></div>
+  <span class="sp"></span>
+  <div class="status">
+    <span class="p-dim">веб :50011 ●</span>
+    <span class="lamp" id="lamp">В ЭФИРЕ</span>
+    <span class="clock" id="clk"></span>
+  </div>
+</header>
+
+<div class="grid">
+  <div class="zone v" id="zL" data-zone="L"></div>
+  <section class="pnl rd">
+    <div class="ph" style="cursor:default"><span class="ico">☰</span><b>Программа</b><span class="p-dim" id="rdSum"></span>
+      <div class="acts"><button id="toLive" title="К идущему">⌖</button><button data-act="Добавить номер" title="Добавить">＋</button></div></div>
+    <div class="pc" id="rundown"></div>
+  </section>
+  <div class="main">
+    <div class="mons">
+      <div class="mon pvw"><div class="mon-h"><span class="tag">PVW</span><b>ПРЕДПРОСМОТР</b> следующий<span class="sp"></span><span id="pvwD"></span></div>
+        <div class="scr"><div class="box"><img id="pvwImg" alt=""><div class="cap" id="pvwCap"></div></div></div></div>
+      <div class="mon pgm" id="pgm"><div class="mon-h"><span class="tag">PGM</span><b>ЭКРАН</b> зеркало проектора<span class="sp"></span><span>1920×1080 · 60 fps</span></div>
+        <div class="scr"><div class="box"><img id="pgmImg" alt=""><div class="cap" id="pgmCap"></div><div class="tc" id="pgmTc"></div><div class="sb">FESTMON</div></div></div></div>
+    </div>
+    <div class="tbar">
+      <div class="btns">
+        <button class="tb play" data-tr="play"><span>▶</span>ПУСК<kbd>Space</kbd></button>
+        <button class="tb pause" data-tr="pause"><span>❚❚</span>ПАУЗА<kbd>P</kbd></button>
+        <button class="tb stop" data-tr="stop"><span>■</span>СТОП<kbd>⇧S</kbd></button>
+        <button class="tb next" data-tr="next"><span>⏭</span>СЛЕДУЮЩИЙ<kbd>N</kbd></button>
+        <button class="tb standby" data-tr="standby"><span>▣</span>ЗАСТАВКА<kbd>B</kbd></button>
+      </div>
+      <div class="levels">
+        <span>Мастер</span><input type="range" id="master" min="0" max="100"><b id="mV"></b>
+        <span>Уровень</span><div class="meter" id="meter"><div class="fill"></div><div class="peak"></div></div><b class="db">—</b>
+        <span>Фон</span><input type="range" id="bed" min="0" max="100"><b id="bV"></b>
+        <span>Осталось</span><div class="meter" style="height:6px"><div class="fill" id="remBar" style="background:var(--accent)"></div></div><b id="rem"></b>
+      </div>
+    </div>
+  </div>
+  <div class="zone v" id="zR" data-zone="R"></div>
+  <div class="zone h" id="zB" data-zone="B"></div>
+</div>
+
+<script src="assets/common.js"></script>
+<script src="assets/panels.js"></script>
+<script>
+(function () {
+  const { PROGRAM, PANELS, state, mmss, cover } = FM;
+  const $ = (s) => document.querySelector(s);
+
+  // ---------- пресеты раскладки ----------
+  // zone: L | R | B | null (скрыта); col — свёрнута до заголовка
+  const PRESETS = {
+    prep: { inspector: { z: "R" }, files: { z: "R" }, bed: { z: "B" }, quick: { z: "B" }, requests: { z: "B" }, plugins: { z: "B", col: true } },
+    show: { inspector: { z: null }, files: { z: null }, bed: { z: null }, quick: { z: "R" }, requests: { z: "R" }, plugins: { z: null } },
+    audio: { inspector: { z: null }, files: { z: "L" }, bed: { z: "R" }, quick: { z: "R" }, requests: { z: null }, plugins: { z: null } },
+  };
+  const ORDER = PANELS.map((p) => p.id);
+  let lay = FM.store.get("b-layout", null) || { cur: "prep", map: JSON.parse(JSON.stringify(PRESETS.prep)), order: ORDER.slice() };
+  let mine = FM.store.get("b-mine", null);
+  const save = () => FM.store.set("b-layout", lay);
+
+  function panelHTML(p) {
+    const m = lay.map[p.id];
+    return `<section class="pnl ${m.col ? "col" : ""}" data-id="${p.id}">
+      <div class="ph" draggable="true"><span class="grab">⋮⋮</span><span class="ico">${p.icon}</span><b>${p.short}</b>${p.badge ? `<span class="p-chip">${p.badge}</span>` : ""}
+        <div class="acts"><button class="cl" data-colp="${p.id}" title="Свернуть до заголовка">${m.col ? "▸" : "▾"}</button><button data-hide="${p.id}" title="Скрыть (${p.key})">✕</button></div></div>
+      <div class="pc">${FM.renderPanel(p.id)}</div></section>`;
+  }
+  function render() {
+    ["L", "R", "B"].forEach((z) => {
+      const el = $("#z" + z);
+      const ids = lay.order.filter((id) => lay.map[id].z === z);
+      el.innerHTML = ids.map((id) => panelHTML(PANELS.find((p) => p.id === id))).join("");
+      el.classList.toggle("empty", !ids.length);
+    });
+    const hidden = PANELS.filter((p) => !lay.map[p.id].z);
+    $("#tray").innerHTML = (hidden.length ? "" : `<span class="p-dim">тяните панели за ⋮⋮ в любую зону</span>`) + hidden.map((p) => `<button data-show="${p.id}" title="Вернуть (${p.key})">${p.icon} ${p.short}</button>`).join("");
+    $("#viewDrop").innerHTML = PANELS.map((p) => {
+      const z = lay.map[p.id].z;
+      return `<label><input type="checkbox" data-vis="${p.id}" ${z ? "checked" : ""}>${p.icon} ${p.title}<span class="zl">${z ? { L: "слева", R: "справа", B: "снизу" }[z] : ""}</span><kbd>${p.key}</kbd></label>`;
+    }).join("") + `<hr><label data-reset>↺ Сбросить к «Подготовке»</label>`;
+    document.querySelectorAll(".preset").forEach((b) => b.classList.toggle("on", b.dataset.preset === lay.cur));
+    $("#pMine").style.opacity = mine ? 1 : 0.4;
+    save();
+  }
+  function applyPreset(name) {
+    const src = name === "mine" ? mine : { map: PRESETS[name], order: ORDER };
+    if (!src) { FM.toast("Сначала сохраните раскладку 💾 (Ctrl+S)"); return; }
+    lay = { cur: name, map: JSON.parse(JSON.stringify(src.map)), order: src.order.slice() };
+    render(); FM.toast("Раскладка: " + { prep: "Подготовка", show: "Эфир", audio: "Звук", mine: "Моя" }[name]);
+  }
+  const lastZone = {};
+  function setVisible(id, vis) {
+    const m = lay.map[id];
+    if (vis && !m.z) m.z = lastZone[id] || "R";
+    if (!vis && m.z) { lastZone[id] = m.z; m.z = null; }
+    m.col = false; lay.cur = null; render();
+  }
+  function saveMine() { mine = { map: JSON.parse(JSON.stringify(lay.map)), order: lay.order.slice() }; FM.store.set("b-mine", mine); lay.cur = "mine"; render(); FM.toast("Раскладка сохранена как «Моя»"); }
+
+  document.addEventListener("click", (e) => {
+    const t = e.target;
+    if (t.closest("#viewMenu .mbtn")) { $("#viewMenu").classList.toggle("open"); return; }
+    if (!t.closest("#viewMenu")) $("#viewMenu").classList.remove("open");
+    const b = t.closest("[data-colp],[data-hide],[data-show],[data-preset],[data-reset]");
+    if (!b) return;
+    if (b.dataset.colp) { const m = lay.map[b.dataset.colp]; m.col = !m.col; lay.cur = null; render(); }
+    if (b.dataset.hide) setVisible(b.dataset.hide, false);
+    if (b.dataset.show) setVisible(b.dataset.show, true);
+    if (b.dataset.preset) applyPreset(b.dataset.preset);
+    if (b.hasAttribute("data-reset")) applyPreset("prep");
+  });
+  document.addEventListener("change", (e) => { if (e.target.dataset.vis) setVisible(e.target.dataset.vis, e.target.checked); });
+  $("#saveMine").onclick = saveMine;
+
+  // ---------- перетаскивание панелей между зонами ----------
+  let dragId = null;
+  document.addEventListener("dragstart", (e) => {
+    const ph = e.target.closest && e.target.closest(".ph"); if (!ph) return;
+    dragId = ph.parentElement.dataset.id; ph.parentElement.classList.add("dragged");
+    document.body.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", dragId);
+  });
+  document.addEventListener("dragend", () => { dragId = null; document.body.classList.remove("dragging"); document.querySelectorAll(".over,.dragged").forEach((x) => x.classList.remove("over", "dragged")); });
+  document.querySelectorAll(".zone").forEach((z) => {
+    z.addEventListener("dragover", (e) => { if (!dragId) return; e.preventDefault(); z.classList.add("over"); });
+    z.addEventListener("dragleave", (e) => { if (!z.contains(e.relatedTarget)) z.classList.remove("over"); });
+    z.addEventListener("drop", (e) => {
+      e.preventDefault(); if (!dragId) return;
+      const horiz = z.dataset.zone === "B";
+      const sibs = [...z.querySelectorAll(".pnl")].filter((p) => p.dataset.id !== dragId);
+      let before = null;
+      for (const p of sibs) { const r = p.getBoundingClientRect(); if (horiz ? e.clientX < r.left + r.width / 2 : e.clientY < r.top + r.height / 2) { before = p.dataset.id; break; } }
+      lay.order = lay.order.filter((x) => x !== dragId);
+      lay.order.splice(before ? lay.order.indexOf(before) : lay.order.length, 0, dragId);
+      lay.map[dragId].z = z.dataset.zone; lay.map[dragId].col = false; lay.cur = null;
+      render();
+    });
+  });
+
+  // ---------- ранданун ----------
+  function renderRundown() {
+    let t = new Date(); t.setSeconds(0);
+    let acc = -state.elapsed, html = `<div class="blkh"><span>Блок 1</span><span>начало 18:00</span></div>`;
+    PROGRAM.forEach((p, i) => {
+      if (p.n === "2.1") html += `<div class="blkh"><span>Блок 2</span><span></span></div>`;
+      const eta = p.status === "done" ? "сыгран" : p.status === "live" ? "идёт" : "через " + mmss(acc);
+      if (p.status !== "done") acc += p.dur;
+      const pill = p.status === "live" ? `<span class="pill">ИДЁТ</span>` : p.status === "next" ? `<span class="pill">ДАЛЕЕ</span>` : "";
+      html += `<div class="row ${p.status} ${p.kind === "break" ? "brk" : ""} ${state.sel === i ? "sel" : ""}" data-i="${i}">
+        <span class="idx">${i + 1}</span><img src="${cover(p)}" alt="">
+        <div style="min-width:0"><div class="t">${pill}${p.n} ${p.title}</div><div class="s">${p.nom ? p.nom + " · " : ""}${p.sub}</div></div>
+        <div class="r">${mmss(p.dur)}<small>${eta}</small></div>
+        ${p.status === "live" ? `<div class="pb"><i style="width:${(state.elapsed / p.dur) * 100}%"></i></div>` : ""}</div>`;
+    });
+    $("#rundown").innerHTML = html;
+    $("#rdSum").textContent = `· ${PROGRAM.length} поз. · ${Math.round(PROGRAM.reduce((a, p) => a + p.dur, 0) / 60)} мин`;
+  }
+  $("#rundown").addEventListener("click", (e) => {
+    const r = e.target.closest(".row"); if (!r) return;
+    state.sel = +r.dataset.i; renderRundown();
+    if (!lay.map.inspector.z) setVisible("inspector", true); else render();
+  });
+  $("#toLive").onclick = () => { const r = $(".row.live"); FM.reveal(r, $("#rundown"), "y"); };
+
+  // ---------- эфир ----------
+  document.querySelectorAll("[data-tr]").forEach((b) => (b.onclick = () => FM.transport(b.dataset.tr)));
+  $("#master").value = state.master; $("#bed").value = state.bed;
+  $("#master").oninput = (e) => FM.setLevel("master", +e.target.value);
+  $("#bed").oninput = (e) => FM.setLevel("bed", +e.target.value);
+  FM.meter($("#meter")); FM.clock($("#clk"));
+  // .db у метра — отдельная ячейка сетки, переносим подпись
+  const meterBox = $("#meter"); meterBox.appendChild(Object.assign(document.createElement("span"), { className: "db", hidden: true }));
+  setInterval(() => { document.querySelector(".levels > b.db").textContent = meterBox.querySelector(".db").textContent; }, 150);
+
+  let lastLive = -1, tick = 0;
+  FM.onChange((s) => {
+    const live = PROGRAM[s.liveIdx], nx = PROGRAM[FM.nextIdx()];
+    const mode = s.standby ? "standby" : !s.playing ? "" : s.paused ? "paused" : "live";
+    $("#lamp").className = "lamp " + mode; $("#lamp").textContent = { live: "● В ЭФИРЕ", paused: "❚❚ ПАУЗА", standby: "▣ ЗАСТАВКА", "": "■ СТОП" }[mode];
+    $("#pgm").classList.toggle("on", mode === "live"); $("#pgm").classList.toggle("standby", s.standby);
+    $("#pgmImg").src = live ? cover(live) : ""; $("#pgmCap").textContent = live ? `${live.n} ${live.title}` : "";
+    $("#pgmTc").textContent = mmss(s.elapsed) + " / " + mmss(live ? live.dur : 0);
+    $("#pvwImg").src = nx ? cover(nx) : ""; $("#pvwCap").textContent = nx ? `${nx.n} ${nx.title}` : "Конец программы"; $("#pvwD").textContent = nx ? mmss(nx.dur) : "";
+    $("#mV").textContent = s.master + "%"; $("#bV").textContent = s.bed + "%";
+    $("#rem").textContent = "−" + mmss(live ? live.dur - s.elapsed : 0);
+    $("#remBar").style.width = live ? (s.elapsed / live.dur) * 100 + "%" : "0";
+    document.querySelector(".tb.play").classList.toggle("on", mode === "live");
+    document.querySelector(".tb.pause").classList.toggle("on", s.paused);
+    document.querySelector(".tb.standby").classList.toggle("on", s.standby);
+    if (lastLive !== s.liveIdx || ++tick % 5 === 0) { const first = lastLive !== s.liveIdx; lastLive = s.liveIdx; renderRundown(); if (first) $("#toLive").click(); }
+    else { const b = document.querySelector(".row.live .pb i"); if (b && live) b.style.width = (s.elapsed / live.dur) * 100 + "%"; }
+  });
+
+  // ---------- клавиши ----------
+  const keys = {
+    Space: () => FM.transport(state.playing && !state.paused ? "pause" : "play"),
+    KeyP: () => FM.transport("pause"), KeyN: () => FM.transport("next"), "shift+KeyS": () => FM.transport("stop"), KeyB: () => FM.transport("standby"),
+    "alt+Digit1": () => applyPreset("prep"), "alt+Digit2": () => applyPreset("show"), "alt+Digit3": () => applyPreset("audio"), "alt+Digit4": () => applyPreset("mine"),
+    "ctrl+KeyS": saveMine,
+  };
+  PANELS.forEach((p) => (keys[p.key] = () => setVisible(p.id, !lay.map[p.id].z)));
+  FM.QUICK.forEach((q) => (keys["Key" + q.key] = () => FM.toast(q.icon + " " + q.label + " — только макет")));
+  FM.hotkeys(keys);
+
+  render();
+})();
+</script>
+</body>
+</html>

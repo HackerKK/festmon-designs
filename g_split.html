@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FestMon · G · Эфир | Подготовка</title>
+<link rel="stylesheet" href="assets/neutral.css">
+<link rel="stylesheet" href="assets/panels.css">
+<style>
+/* Раскладка «две половины»: слева то, что видит зал (эфир), справа рабочий
+ * стол подготовки с вкладками. Разделитель тянется; три режима ширины. */
+:root { --live: 46%; }
+.app { height: 100%; display: grid; grid-template-columns: var(--live) 12px minmax(0, 1fr); transition: grid-template-columns .2s; }
+body.m-show .app { grid-template-columns: minmax(0, 1fr) 12px 0; }
+body.m-prep .app { grid-template-columns: 300px 12px minmax(0, 1fr); }
+
+/* ---------- эфир ---------- */
+.live { background: #111216; display: flex; flex-direction: column; gap: 12px; padding: 14px; min-width: 0; min-height: 0; overflow: auto; }
+.lh { display: flex; align-items: center; gap: 10px; }
+.lh h2 { margin: 0; font-size: 13px; letter-spacing: .14em; color: var(--dim); }
+.lh .sp { flex: 1; }
+.lh b { font: 700 15px Consolas, monospace; }
+.live .scr { aspect-ratio: 16/9; flex: none; }
+.live .scr .cap { font-size: 20px; }
+.nowrow { display: flex; align-items: flex-end; gap: 14px; }
+.nowrow .tt { flex: 1; min-width: 0; }
+.nowrow .tt small { color: var(--dim); font-weight: 700; }
+.nowrow .tt div { font-size: 26px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nowrow .cd { font: 700 52px/1 Consolas, monospace; color: #ffe082; }
+.nowrow .cd.low { color: var(--red-fg); }
+.pb { height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; flex: none; }
+.pb i { display: block; height: 100%; background: var(--run); transition: width 1s linear; }
+.upn { display: grid; gap: 4px; }
+.upn div { display: grid; grid-template-columns: 54px 1fr auto; gap: 10px; padding: 6px 10px; border-radius: 6px; background: var(--panel); font-size: 14px; }
+.upn div:first-child { box-shadow: inset 3px 0 0 var(--blue); }
+.upn span { color: var(--dim); font: 600 13px Consolas, monospace; }
+.tr { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; }
+.tr .tk { height: 60px; font-size: 15px; }
+.tr .tk span { font-size: 22px; }
+.tr .tk.play, .tr .tk.next { grid-row: span 1; }
+.lvl { display: grid; grid-template-columns: 70px 1fr 50px; gap: 6px 10px; align-items: center; font-size: 11px; background: var(--panel); border-radius: 8px; padding: 10px 12px; }
+.lvl > span { color: var(--dim); font-weight: 700; letter-spacing: .06em; }
+.lvl > b { font: 700 13px Consolas, monospace; text-align: right; }
+.lvl input { width: 100%; }
+/* узкий режим: эфир — колонка-страховка */
+body.m-prep .live .nowrow { flex-direction: column; align-items: stretch; }
+body.m-prep .live .nowrow .tt div { font-size: 18px; }
+body.m-prep .live .nowrow .cd { font-size: 40px; }
+body.m-prep .live .upn div:nth-child(n+2) { display: none; }
+body.m-prep .live .tr { grid-template-columns: 1fr 1fr; }
+body.m-prep .live .tr .tk { height: 54px; font-size: 12px; }
+body.m-prep .live .tr .tk.play { grid-column: 1 / 3; }
+body.m-prep .live .lvl { grid-template-columns: 52px 1fr 40px; }
+
+/* ---------- разделитель ---------- */
+.div { background: var(--panel); border-left: 1px solid var(--border); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: col-resize; }
+.div:hover { background: var(--panel2); }
+.div button { width: 10px; height: 44px; border: 0; padding: 0; background: var(--border); color: var(--text); border-radius: 3px; cursor: pointer; font-size: 9px; }
+.div button:hover { background: var(--accent); color: var(--accent-fg); }
+
+/* ---------- подготовка ---------- */
+.prep { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg); overflow: hidden; }
+body.m-show .prep { visibility: hidden; }
+.ph { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid var(--border); flex: none; }
+.ph .scr { width: 240px; aspect-ratio: 16/9; flex: none; }
+.ph .info { flex: 1; min-width: 0; }
+.ph .info small { color: var(--dim); letter-spacing: .1em; font-size: 11px; font-weight: 700; }
+.ph .info div { font-size: 18px; font-weight: 700; }
+.ph .info p { margin: 2px 0 0; color: var(--dim); font-size: 13px; }
+.modes { display: flex; gap: 4px; }
+.tabs { display: flex; gap: 2px; padding: 0 10px; border-bottom: 1px solid var(--border); background: var(--panel); flex: none; overflow-x: auto; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--dim); padding: 10px 12px; cursor: pointer; font-weight: 600; font-size: 13px; white-space: nowrap; }
+.tabs button.on { color: var(--text); border-bottom-color: var(--accent); }
+.tabs button.b2 { color: var(--blue); border-bottom-color: var(--blue); }
+.tabs .sp { flex: 1; }
+.tabs .hint { align-self: center; color: var(--dim); font-size: 12px; white-space: nowrap; }
+.area { flex: 1; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr); }
+.area.two { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+.pane { overflow: auto; padding: 14px; min-height: 0; }
+.pane + .pane { border-top: 2px solid var(--blue); }
+.pane > h5 { margin: 0 0 8px; font-size: 11px; letter-spacing: .1em; color: var(--accent); text-transform: uppercase; display: flex; justify-content: space-between; }
+.pane > h5 button { background: none; border: 0; color: var(--dim); cursor: pointer; }
+
+/* сетка карточек программы */
+.blk { grid-column: 1 / -1; font-size: 11px; font-weight: 800; letter-spacing: .12em; color: var(--dim); margin-top: 6px; text-transform: uppercase; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.card { background: var(--panel2); border: 2px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; position: relative; }
+.card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+.card .m { padding: 7px 9px; }
+.card .m b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .m span { color: var(--dim); font-size: 12px; }
+.card .du { position: absolute; top: 6px; right: 6px; font: 700 12px Consolas, monospace; background: rgba(0,0,0,.7); padding: 1px 6px; border-radius: 3px; }
+.card .st { position: absolute; top: 6px; left: 6px; font: 800 10px "Segoe UI"; letter-spacing: .08em; padding: 2px 7px; border-radius: 3px; background: rgba(0,0,0,.6); }
+.card.done { opacity: .45; }
+.card.live { border-color: var(--run); }
+.card.live .st { background: var(--run); }
+.card.next { border-color: var(--blue); border-style: dashed; }
+.card.next .st { color: var(--next-fg); }
+.card.sel { outline: 2px solid var(--accent); outline-offset: 2px; }
+.card .bar { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--run); }
+</style>
+</head>
+<body class="m-bal">
+<div class="app">
+  <section class="live">
+    <div class="lh"><h2>ЭФИР · ВИДИТ ЗАЛ</h2><span class="lamp" id="lamp">В ЭФИРЕ</span><span class="sp"></span><b id="clk"></b></div>
+    <div class="scr pgm" id="pgm"><img alt=""><span class="tag">PGM · ПРОЕКТОР</span><div class="sb">FESTMON</div><div class="tc" id="pgmTc"></div><div class="cap"></div></div>
+    <div class="nowrow"><div class="tt"><small id="nowN"></small><div id="nowT"></div></div><div class="cd" id="cd"></div></div>
+    <div class="pb"><i id="pbar"></i></div>
+    <div class="upn" id="upn"></div>
+    <div class="tr">
+      <button class="tk play" data-tr="play"><span>▶</span>ПУСК<kbd>Space</kbd></button>
+      <button class="tk pause" data-tr="pause"><span>❚❚</span>ПАУЗА<kbd>P</kbd></button>
+      <button class="tk stop" data-tr="stop"><span>■</span>СТОП<kbd>⇧S</kbd></button>
+      <button class="tk next" data-tr="next"><span>⏭</span>СЛЕДУЮЩИЙ<kbd>N</kbd></button>
+      <button class="tk standby" data-tr="standby" style="grid-column:span 2"><span>▣</span>ЗАСТАВКА<kbd>B</kbd></button>
+    </div>
+    <div class="lvl">
+      <span>МАСТЕР</span><input type="range" id="master" min="0" max="100"><b id="mV"></b>
+      <span>УРОВЕНЬ</span><div class="meter" id="meter"><div class="fill"></div><div class="peak"></div><span class="db"></span></div><b id="dbV" class="dim"></b>
+      <span>ФОН</span><input type="range" id="bed" min="0" max="100"><b id="bV"></b>
+    </div>
+  </section>
+
+  <div class="div" id="div" title="Тяните, чтобы поменять ширину · двойной клик — поровну">
+    <button data-mode="show" title="Эфир на весь экран (Ctrl+←)">◀</button>
+    <button data-mode="prep" title="Подготовка шире, эфир — узкая колонка (Ctrl+→)">▶</button>
+  </div>
+
+  <section class="prep">
+    <div class="ph">
+      <div class="scr pvw" id="pvw"><img alt=""><span class="tag">PVW</span></div>
+      <div class="info"><small>ПРЕДПРОСМОТР · ПОЙДЁТ СЛЕДУЮЩИМ</small><div id="pvT"></div><p id="pvS"></p></div>
+      <div class="modes">
+        <button class="btn" data-mode="show" title="Ctrl+←">Только эфир</button>
+        <button class="btn" data-mode="bal" title="Ctrl+↓">Поровну</button>
+        <button class="btn" data-mode="prep" title="Ctrl+→">Подготовка</button>
+      </div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="area" id="area"></div>
+  </section>
+</div>
+
+<script src="assets/common.js"></script>
+<script src="assets/panels.js"></script>
+<script>
+(function () {
+  const { PROGRAM, PANELS, state, mmss, cover } = FM;
+  const $ = (s) => document.querySelector(s);
+  const TABS = [{ id: "program", short: "Программа", icon: "☰", key: "F7", title: "Программа" }, ...PANELS];
+
+  // ---------- режим ширины и вкладки ----------
+  let ui = FM.store.get("g-ui", null) || { mode: "bal", live: 46, a: "program", b: "requests" };
+  const save = () => FM.store.set("g-ui", ui);
+  function applyMode() {
+    document.body.className = "m-" + ui.mode;
+    document.documentElement.style.setProperty("--live", ui.live + "%");
+    document.querySelectorAll(".modes [data-mode]").forEach((b) => b.classList.toggle("on", b.dataset.mode === ui.mode));
+    save();
+  }
+  function setMode(m) { ui.mode = m; applyMode(); }
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-mode]"); if (b) { e.stopPropagation(); setMode(ui.mode === b.dataset.mode && b.closest(".div") ? "bal" : b.dataset.mode); } });
+  const dv = $("#div");
+  dv.addEventListener("dblclick", () => { ui.live = 50; setMode("bal"); });
+  dv.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button")) return;
+    dv.setPointerCapture(e.pointerId);
+    dv.onpointermove = (ev) => { ui.live = Math.max(25, Math.min(75, (ev.clientX / innerWidth) * 100)); ui.mode = "bal"; applyMode(); };
+    dv.onpointerup = () => { dv.onpointermove = null; save(); };
+  });
+
+  function renderTabs() {
+    $("#tabs").innerHTML = TABS.map((t) => `<button class="${t.id === ui.a ? "on" : ""} ${t.id === ui.b ? "b2" : ""}" data-tab="${t.id}" title="${t.title} · ${t.key} (Shift+клик — во вторую половину)">${t.icon} ${t.short}${t.badge ? ` <span class="p-chip">${t.badge}</span>` : ""}</button>`).join("") +
+      `<span class="sp"></span><span class="hint">Shift+клик — открыть вторую вкладку снизу</span>`;
+    const pane = (id, second) => { const t = TABS.find((x) => x.id === id);
+      return `<div class="pane"><h5><span>${t.title}</span>${second ? `<button data-close2 title="Закрыть нижнюю">✕</button>` : ""}</h5>${id === "program" ? programHTML() : FM.renderPanel(id)}</div>`; };
+    $("#area").className = "area" + (ui.b ? " two" : "");
+    $("#area").innerHTML = pane(ui.a) + (ui.b ? pane(ui.b, true) : "");
+    save();
+  }
+  function openTab(id, second) {
+    if (ui.mode === "show") setMode("bal");
+    if (second) ui.b = ui.b === id ? null : id; else ui.a = id;
+    if (ui.a === ui.b) ui.b = null;
+    renderTabs();
+  }
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-tab]"); if (t) openTab(t.dataset.tab, e.shiftKey);
+    if (e.target.closest("[data-close2]")) { ui.b = null; renderTabs(); }
+    const c = e.target.closest(".card"); if (c) { state.sel = +c.dataset.i; if (ui.a !== "inspector") { ui.b = "inspector"; } renderTabs(); }
+  });
+
+  function programHTML() {
+    let h = `<div class="cards"><div class="blk">Блок 1</div>`;
+    PROGRAM.forEach((p, i) => {
+      if (p.n === "2.1") h += `<div class="blk">Блок 2</div>`;
+      const st = { done: "СЫГРАН", live: "ИДЁТ", next: "ДАЛЕЕ", queued: "" }[p.status];
+      h += `<div class="card ${p.status} ${state.sel === i ? "sel" : ""}" data-i="${i}"><img src="${cover(p)}" alt="">${st ? `<span class="st">${st}</span>` : ""}<span class="du">${mmss(p.dur)}</span>
+        ${p.status === "live" ? `<span class="bar" style="width:${(state.elapsed / p.dur) * 100}%"></span>` : ""}<div class="m"><b>${p.n} ${p.title}</b><span>${p.nom ? p.nom + " · " : ""}${p.sub}</span></div></div>`;
+    });
+    return h + `<button class="btn" data-act="Добавить номер" style="min-height:120px;border-style:dashed;font-size:22px">＋</button></div>`;
+  }
+
+  // ---------- эфир ----------
+  document.querySelectorAll("[data-tr]").forEach((b) => (b.onclick = () => FM.transport(b.dataset.tr)));
+  $("#master").value = state.master; $("#bed").value = state.bed;
+  $("#master").oninput = (e) => FM.setLevel("master", +e.target.value);
+  $("#bed").oninput = (e) => FM.setLevel("bed", +e.target.value);
+  FM.meter($("#meter")); FM.clock($("#clk"));
+  setInterval(() => { $("#dbV").textContent = $("#meter .db").textContent.replace(" dB", ""); }, 150);
+
+  let lastLive = -1;
+  FM.onChange((s) => {
+    const li = s.liveIdx, live = PROGRAM[li], ni = FM.nextIdx(), nx = PROGRAM[ni];
+    const mode = s.standby ? "standby" : !s.playing ? "" : s.paused ? "paused" : "live";
+    $("#lamp").className = "lamp " + mode; $("#lamp").textContent = { live: "● В ЭФИРЕ", paused: "❚❚ ПАУЗА", standby: "▣ ЗАСТАВКА", "": "■ СТОП" }[mode];
+    const pg = $("#pgm"); pg.classList.toggle("on", mode === "live"); pg.classList.toggle("standby", s.standby);
+    pg.querySelector("img").src = live ? cover(live) : ""; pg.querySelector(".cap").textContent = live ? live.sub : "";
+    $("#pgmTc").textContent = mmss(s.elapsed) + " / " + mmss(live ? live.dur : 0);
+    $("#nowN").textContent = live ? `${live.n} · ${live.nom} · СЕЙЧАС` : ""; $("#nowT").textContent = live ? live.title : "—";
+    const rem = live ? live.dur - s.elapsed : 0; $("#cd").textContent = "−" + mmss(rem); $("#cd").classList.toggle("low", rem <= 30);
+    $("#pbar").style.width = live ? (s.elapsed / live.dur) * 100 + "%" : "0";
+    $("#upn").innerHTML = PROGRAM.slice(ni, ni + 3).map((p) => `<div><span>${p.n || "—"}</span><b>${p.title}</b><span>${mmss(p.dur)}</span></div>`).join("");
+    $("#pvw img").src = nx ? cover(nx) : ""; $("#pvT").textContent = nx ? `${nx.n} ${nx.title}` : "Конец программы"; $("#pvS").textContent = nx ? `${nx.sub} · ${mmss(nx.dur)} · ${nx.kind.toUpperCase()}` : "";
+    $("#mV").textContent = s.master + "%"; $("#bV").textContent = s.bed + "%";
+    document.querySelector(".tk.play").classList.toggle("on", mode === "live");
+    document.querySelector(".tk.pause").classList.toggle("on", s.paused);
+    document.querySelector(".tk.standby").classList.toggle("on", s.standby);
+    if (lastLive !== li) { lastLive = li; renderTabs(); }
+    else { const b = document.querySelector(".card.live .bar"); if (b && live) b.style.width = (s.elapsed / live.dur) * 100 + "%"; }
+  });
+
+  const keys = {
+    Space: () => FM.transport(state.playing && !state.paused ? "pause" : "play"),
+    KeyP: () => FM.transport("pause"), KeyN: () => FM.transport("next"), "shift+KeyS": () => FM.transport("stop"), KeyB: () => FM.transport("standby"),
+    "ctrl+ArrowLeft": () => setMode("show"), "ctrl+ArrowRight": () => setMode("prep"), "ctrl+ArrowDown": () => setMode("bal"),
+  };
+  TABS.forEach((t) => { keys[t.key] = () => openTab(t.id, false); keys["shift+" + t.key] = () => openTab(t.id, true); });
+  FM.QUICK.forEach((q) => (keys["Key" + q.key] = () => FM.toast(q.icon + " " + q.label + " — только макет")));
+  FM.hotkeys(keys);
+  applyMode();
+})();
+</script>
+</body>
+</html>

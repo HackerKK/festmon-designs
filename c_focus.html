@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FestMon · C · Только эфир</title>
+<link rel="stylesheet" href="assets/panels.css">
+<style>
+/* Почти чёрный, максимальный контраст: читается из тёмного зала с двух метров. */
+:root {
+  --bg: #08090b; --panel: #121418; --panel2: #1b1e24; --field: #050607;
+  --border: #2a2e37; --text: #f4f6fa; --dim: #9aa0ae;
+  --accent: #7cf2c8; --accent-fg: #002a1c; --ok: #4be38f; --warn: #ffd04a; --bad: #ff4d5a;
+  --live: #ff3344; --next: #7cc4ff;
+  --r: 8px; --drawer: 380px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 15px/1.35 "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+button { font-family: inherit; }
+
+.app { position: absolute; inset: 0; display: grid; grid-template-rows: 34px 1fr auto auto; transition: left .22s, right .22s; }
+body.pinL .app { left: var(--drawer); }
+body.pinR .app { right: var(--drawer); }
+
+/* ---------- строка статуса ---------- */
+.status { display: flex; align-items: center; gap: 16px; padding: 0 44px; font-size: 13px; color: var(--dim); border-bottom: 1px solid #15171c; }
+.status b { color: var(--text); }
+.status .sp { flex: 1; }
+.status kbd, .hint kbd { font: 600 11px Consolas, monospace; border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; color: var(--dim); }
+.status button { background: none; border: 1px solid var(--border); color: var(--dim); border-radius: 6px; padding: 2px 10px; cursor: pointer; font-size: 12px; }
+.status button:hover { color: var(--text); }
+
+/* ---------- герой: сейчас / далее ---------- */
+.hero { display: grid; grid-template-columns: 1.55fr 1fr; gap: 22px; padding: 18px 44px 10px; min-height: 0; }
+.now, .nx { display: flex; flex-direction: column; min-height: 0; }
+.lbl { font-size: 13px; font-weight: 800; letter-spacing: .2em; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+.now .lbl { color: var(--live); }
+.now .lbl i { width: 12px; height: 12px; border-radius: 50%; background: var(--live); box-shadow: 0 0 12px var(--live); animation: bl 1.2s infinite; }
+.now.off .lbl { color: var(--dim); } .now.off .lbl i { background: var(--dim); box-shadow: none; animation: none; }
+.now.paused .lbl { color: var(--warn); } .now.paused .lbl i { background: var(--warn); animation: none; }
+@keyframes bl { 50% { opacity: .2; } }
+.nx .lbl { color: var(--next); }
+.scr { position: relative; background: #000; border-radius: 10px; overflow: hidden; flex: 1; min-height: 0; display: grid; place-items: center; }
+.now .scr { box-shadow: 0 0 0 3px var(--live); }
+.now.off .scr, .now.paused .scr { box-shadow: 0 0 0 2px var(--border); }
+.nx .scr { box-shadow: 0 0 0 2px #1f3a52; flex: 0 1 auto; }
+.scr .box { position: relative; width: 100%; aspect-ratio: 16/9; max-height: 100%; }
+.scr img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scr .tag { position: absolute; top: 10px; left: 10px; font: 800 11px "Segoe UI"; letter-spacing: .1em; background: rgba(0,0,0,.65); padding: 3px 8px; border-radius: 4px; }
+.scr .sb { position: absolute; inset: 0; display: none; place-items: center; background: radial-gradient(circle, #10342a, #000 70%); color: var(--accent); font: 800 34px "Segoe UI"; letter-spacing: .3em; }
+.standby .scr .sb { display: grid; }
+.title { display: flex; align-items: flex-end; gap: 18px; margin-top: 12px; }
+.title .tt { min-width: 0; flex: 1; }
+.title .n { color: var(--dim); font-weight: 700; font-size: 15px; }
+.title .t { font-size: 34px; font-weight: 800; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.title .s { color: var(--dim); font-size: 15px; }
+.big { font: 700 64px/1 Consolas, monospace; letter-spacing: -.02em; text-align: right; }
+.big small { display: block; font: 600 12px "Segoe UI"; color: var(--dim); letter-spacing: .15em; margin-bottom: 4px; }
+.big.low { color: var(--live); }
+.prog { height: 8px; background: #1a1d23; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+.prog i { display: block; height: 100%; background: var(--live); transition: width 1s linear; }
+.nx .t { font-size: 26px; }
+.then { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.then .lbl { color: var(--dim); margin-bottom: 2px; }
+.then div.it { display: flex; gap: 10px; align-items: center; color: var(--dim); font-size: 15px; }
+.then div.it b { color: var(--text); font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.then div.it span { font: 600 14px Consolas, monospace; }
+
+/* ---------- лента ---------- */
+.strip { display: flex; gap: 8px; padding: 10px 44px; overflow-x: auto; scroll-behavior: smooth; }
+.strip .c { flex: none; width: 150px; border-radius: 8px; overflow: hidden; background: var(--panel); border: 2px solid transparent; cursor: pointer; position: relative; }
+.strip .c img { width: 100%; height: 64px; object-fit: cover; display: block; }
+.strip .c div { padding: 5px 8px 6px; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.strip .c em { position: absolute; top: 4px; right: 5px; font: 700 11px Consolas, monospace; font-style: normal; background: rgba(0,0,0,.7); padding: 0 5px; border-radius: 3px; }
+.strip .c.done { opacity: .35; }
+.strip .c.live { border-color: var(--live); }
+.strip .c.next { border-color: var(--next); border-style: dashed; }
+.strip .c.sel { outline: 2px solid var(--accent); outline-offset: 2px; }
+.strip .c .bar { position: absolute; left: 0; top: 60px; height: 4px; background: var(--live); }
+
+/* ---------- транспорт ---------- */
+.deck { display: grid; grid-template-columns: 2fr 1fr 1fr 1.6fr 1fr 340px; gap: 10px; padding: 8px 44px 18px; }
+.k { position: relative; height: 92px; border-radius: 14px; border: 2px solid #2b3039; background: #15181e; color: var(--text); font-size: 17px; font-weight: 800; letter-spacing: .08em; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: transform .06s; }
+.k span { font-size: 30px; line-height: 1; }
+.k kbd { position: absolute; top: 8px; right: 10px; font: 600 11px Consolas, monospace; color: var(--dim); }
+.k:hover { border-color: #4a5160; }
+.k:active { transform: scale(.97); }
+.k.play { background: #0f5a32; border-color: var(--ok); }
+.k.play.on { box-shadow: 0 0 0 3px rgba(75,227,143,.35); }
+.k.pause.on { background: #3d3410; border-color: var(--warn); color: var(--warn); }
+.k.stop { border-color: #6a2129; color: #ff7a85; }
+.k.next { background: #0d2f4a; border-color: var(--next); color: var(--next); }
+.k.standby.on { background: #0e3328; border-color: var(--accent); color: var(--accent); }
+.vol { background: var(--panel); border-radius: 14px; padding: 10px 14px; display: grid; grid-template-columns: 52px 1fr 48px; gap: 4px 10px; align-items: center; font-size: 12px; }
+.vol > span { color: var(--dim); font-weight: 800; letter-spacing: .1em; font-size: 11px; }
+.vol > b { font: 700 15px Consolas, monospace; text-align: right; }
+.vol input { width: 100%; accent-color: var(--accent); }
+.meter { position: relative; height: 14px; background: #000; border-radius: 3px; overflow: hidden; }
+.meter .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #22b35e 0 70%, #e0b020 80%, #ff4d5a 94%); transition: width .08s; }
+.meter .peak { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; }
+.meter .db { display: none; }
+
+/* ---------- края-ярлыки и выезжающие панели ---------- */
+.edge { position: fixed; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 30; }
+.edge.l { left: 4px; } .edge.r { right: 4px; }
+body.pinL .edge.l { left: calc(var(--drawer) + 4px); }
+body.pinR .edge.r { right: calc(var(--drawer) + 4px); }
+.edge button { position: relative; width: 32px; height: 40px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--dim); cursor: pointer; font-size: 15px; }
+.edge button:hover, .edge button.on { color: var(--accent); border-color: var(--accent); }
+.edge button .bd { position: absolute; top: -5px; right: -5px; background: var(--bad); color: #fff; font: 700 10px/16px "Segoe UI"; min-width: 16px; border-radius: 8px; }
+.edge button:hover::after { content: attr(data-tip); position: absolute; top: 9px; white-space: nowrap; background: #000; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 12px; border: 1px solid var(--border); }
+.edge.l button:hover::after { left: 38px; } .edge.r button:hover::after { right: 38px; }
+
+.drawer { position: fixed; top: 0; bottom: 0; width: var(--drawer); background: var(--panel); z-index: 40; display: flex; flex-direction: column; transition: transform .22s cubic-bezier(.2,.8,.2,1); box-shadow: 0 0 60px rgba(0,0,0,.7); }
+.drawer.l { left: 0; transform: translateX(-102%); border-right: 1px solid var(--border); }
+.drawer.r { right: 0; transform: translateX(102%); border-left: 1px solid var(--border); }
+.drawer.open { transform: none; }
+body.pinL .drawer.l, body.pinR .drawer.r { box-shadow: none; }
+.dh { display: flex; align-items: center; gap: 4px; padding: 10px 10px 0; }
+.dh .tabs { display: flex; gap: 2px; flex: 1; flex-wrap: wrap; }
+.dh .tabs button { background: none; border: 0; color: var(--dim); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+.dh .tabs button.on { background: var(--panel2); color: var(--text); }
+.dh .ic { background: none; border: 1px solid transparent; color: var(--dim); width: 30px; height: 30px; border-radius: 6px; cursor: pointer; }
+.dh .ic:hover { border-color: var(--border); color: var(--text); }
+.dh .ic.on { color: var(--accent); border-color: var(--accent); }
+.db-body { flex: 1; overflow: auto; padding: 12px; }
+.dfoot { padding: 8px 12px; font-size: 12px; color: var(--dim); border-top: 1px solid var(--border); }
+.scrim { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 35; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.scrim.on { opacity: 1; pointer-events: auto; }
+
+/* ---------- палитра команд ---------- */
+.cmd { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.55); display: none; justify-content: center; padding-top: 14vh; }
+.cmd.on { display: flex; }
+.cmd > div { width: 560px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 30px 80px rgba(0,0,0,.6); overflow: hidden; height: fit-content; }
+.cmd input { width: 100%; background: none; border: 0; border-bottom: 1px solid var(--border); color: var(--text); font: 18px "Segoe UI"; padding: 16px 18px; outline: none; }
+.cmd ul { list-style: none; margin: 0; padding: 6px; max-height: 340px; overflow: auto; }
+.cmd li { display: flex; gap: 12px; align-items: center; padding: 9px 12px; border-radius: 7px; cursor: pointer; }
+.cmd li.on { background: var(--panel2); }
+.cmd li kbd { margin-left: auto; font: 11px Consolas, monospace; color: var(--dim); }
+.cmd li .g { color: var(--dim); font-size: 12px; width: 70px; }
+::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-thumb { background: #2a2e37; border-radius: 4px; } ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="status">
+    <b>FESTMON</b><span>Блок 1 · <b id="pos"></b></span><span>до конца блока <b id="blockRem"></b></span>
+    <span class="sp"></span>
+    <span>веб ● :50011</span><span>VK ● 2 мин назад</span><b id="clk"></b>
+    <button id="openCmd">⌘ Команды <kbd>Ctrl+K</kbd></button>
+  </div>
+  <section class="hero">
+    <div class="now" id="now">
+      <div class="lbl"><i></i><span id="nowLbl">СЕЙЧАС В ЭФИРЕ</span></div>
+      <div class="scr"><div class="box"><img id="pgmImg" alt=""><span class="tag">ЭКРАН · ПРОЕКТОР</span><div class="sb">FESTMON</div></div></div>
+      <div class="title"><div class="tt"><div class="n" id="nowN"></div><div class="t" id="nowT"></div><div class="s" id="nowS"></div></div>
+        <div class="big" id="remBox"><small>ОСТАЛОСЬ</small><span id="rem"></span></div></div>
+      <div class="prog"><i id="progBar"></i></div>
+    </div>
+    <div class="nx">
+      <div class="lbl">ДАЛЕЕ · ПРЕДПРОСМОТР</div>
+      <div class="scr"><div class="box"><img id="pvwImg" alt=""><span class="tag">ПРЕДПРОСМОТР</span></div></div>
+      <div class="title"><div class="tt"><div class="n" id="nxN"></div><div class="t" id="nxT"></div><div class="s" id="nxS"></div></div></div>
+      <div class="then" id="then"></div>
+    </div>
+  </section>
+  <div class="strip" id="strip"></div>
+  <div class="deck">
+    <button class="k play" data-tr="play"><span>▶</span>ПУСК<kbd>Space</kbd></button>
+    <button class="k pause" data-tr="pause"><span>❚❚</span>ПАУЗА<kbd>P</kbd></button>
+    <button class="k stop" data-tr="stop"><span>■</span>СТОП<kbd>⇧S</kbd></button>
+    <button class="k next" data-tr="next"><span>⏭</span>СЛЕДУЮЩИЙ<kbd>N</kbd></button>
+    <button class="k standby" data-tr="standby"><span>▣</span>ЗАСТАВКА<kbd>B</kbd></button>
+    <div class="vol">
+      <span>МАСТЕР</span><input type="range" id="master" min="0" max="100"><b id="mV"></b>
+      <span>УРОВЕНЬ</span><div class="meter" id="meter"><div class="fill"></div><div class="peak"></div><span class="db"></span></div><b id="dbV" style="font-size:12px;color:var(--dim)"></b>
+      <span>ФОН</span><input type="range" id="bed" min="0" max="100"><b id="bV"></b>
+    </div>
+  </div>
+</div>
+
+<div class="edge l" id="edgeL"></div>
+<div class="edge r" id="edgeR"></div>
+<div class="scrim" id="scrim"></div>
+<aside class="drawer l" id="drL"><div class="dh"><div class="tabs"></div><button class="ic" data-pin="L" title="Закрепить: панель сдвигает эфир, а не перекрывает">📌</button><button class="ic" data-x="L" title="Закрыть (Esc)">✕</button></div><div class="db-body"></div><div class="dfoot">Esc — закрыть · 📌 — закрепить рядом с эфиром</div></aside>
+<aside class="drawer r" id="drR"><div class="dh"><div class="tabs"></div><button class="ic" data-pin="R" title="Закрепить: панель сдвигает эфир, а не перекрывает">📌</button><button class="ic" data-x="R" title="Закрыть (Esc)">✕</button></div><div class="db-body"></div><div class="dfoot">Esc — закрыть · 📌 — закрепить рядом с эфиром</div></aside>
+
+<div class="cmd" id="cmd"><div><input id="cmdIn" placeholder="Панель, действие или номер…"><ul id="cmdList"></ul></div></div>
+
+<script src="assets/common.js"></script>
+<script src="assets/panels.js"></script>
+<script>
+(function () {
+  const { PROGRAM, PANELS, state, mmss, cover } = FM;
+  const $ = (s) => document.querySelector(s);
+
+  // ---------- выезжающие панели ----------
+  const SIDES = { L: ["files", "bed"], R: ["inspector", "quick", "requests", "plugins"] };
+  let ui = FM.store.get("c-ui", null) || { L: { open: false, tab: "files", pin: false }, R: { open: false, tab: "quick", pin: false } };
+  const save = () => FM.store.set("c-ui", ui);
+  const sideOf = (id) => (SIDES.L.includes(id) ? "L" : "R");
+
+  function renderSide(s) {
+    const d = ui[s], dr = $("#dr" + s);
+    dr.classList.toggle("open", d.open);
+    dr.querySelector(".tabs").innerHTML = SIDES[s].map((id) => { const p = PANELS.find((x) => x.id === id);
+      return `<button class="${id === d.tab ? "on" : ""}" data-tab="${id}">${p.icon} ${p.short}${p.badge ? ` <span class="p-chip">${p.badge}</span>` : ""}</button>`; }).join("");
+    dr.querySelector(".db-body").innerHTML = FM.renderPanel(d.tab);
+    dr.querySelector("[data-pin]").classList.toggle("on", d.pin);
+    document.body.classList.toggle("pin" + s, d.open && d.pin);
+    $("#edge" + s).innerHTML = SIDES[s].map((id) => { const p = PANELS.find((x) => x.id === id);
+      return `<button class="${d.open && d.tab === id ? "on" : ""}" data-panel="${id}" data-tip="${p.title} · ${p.key}">${p.icon}${p.badge ? `<span class="bd">${p.badge}</span>` : ""}</button>`; }).join("");
+  }
+  function render() {
+    renderSide("L"); renderSide("R");
+    const floating = (ui.L.open && !ui.L.pin) || (ui.R.open && !ui.R.pin);
+    $("#scrim").classList.toggle("on", floating);
+    save();
+  }
+  function toggle(id) {
+    const s = sideOf(id), d = ui[s];
+    if (d.open && d.tab === id) d.open = false; else { d.open = true; d.tab = id; }
+    render();
+  }
+  function closeFloating() { ["L", "R"].forEach((s) => { if (!ui[s].pin) ui[s].open = false; }); render(); }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-panel],[data-tab],[data-pin],[data-x]"); if (!b) return;
+    if (b.dataset.panel) toggle(b.dataset.panel);
+    if (b.dataset.tab) { ui[sideOf(b.dataset.tab)].tab = b.dataset.tab; render(); }
+    if (b.dataset.pin) { ui[b.dataset.pin].pin = !ui[b.dataset.pin].pin; render(); }
+    if (b.dataset.x) { ui[b.dataset.x].open = false; render(); }
+  });
+  $("#scrim").onclick = closeFloating;
+
+  // ---------- палитра команд ----------
+  const CMDS = [
+    ...PANELS.map((p) => ({ g: "Панель", t: p.title, k: p.key, run: () => toggle(p.id) })),
+    { g: "Эфир", t: "Пуск", k: "Space", run: () => FM.transport("play") },
+    { g: "Эфир", t: "Пауза", k: "P", run: () => FM.transport("pause") },
+    { g: "Эфир", t: "Следующий номер", k: "N", run: () => FM.transport("next") },
+    { g: "Эфир", t: "Заставка", k: "B", run: () => FM.transport("standby") },
+    { g: "Эфир", t: "Стоп", k: "⇧S", run: () => FM.transport("stop") },
+    ...FM.QUICK.map((q) => ({ g: "Кнопка", t: q.icon + " " + q.label, k: q.key, run: () => FM.toast(q.label + " — только макет") })),
+    ...PROGRAM.filter((p) => p.n).map((p) => ({ g: "Номер", t: `${p.n} ${p.title} — открыть в инспекторе`, k: "", run: () => { state.sel = PROGRAM.indexOf(p); ui.R.open = true; ui.R.tab = "inspector"; render(); renderStrip(); } })),
+  ];
+  let cmdSel = 0, cmdRes = CMDS;
+  function cmdRender() {
+    const q = $("#cmdIn").value.trim().toLowerCase();
+    cmdRes = CMDS.filter((c) => (c.g + " " + c.t).toLowerCase().includes(q)).slice(0, 12);
+    cmdSel = Math.min(cmdSel, Math.max(0, cmdRes.length - 1));
+    $("#cmdList").innerHTML = cmdRes.map((c, i) => `<li class="${i === cmdSel ? "on" : ""}" data-ci="${i}"><span class="g">${c.g}</span>${c.t}${c.k ? `<kbd>${c.k}</kbd>` : ""}</li>`).join("");
+  }
+  function cmdOpen() { $("#cmd").classList.add("on"); $("#cmdIn").value = ""; cmdSel = 0; cmdRender(); $("#cmdIn").focus(); }
+  function cmdClose() { $("#cmd").classList.remove("on"); }
+  function cmdRun(i) { const c = cmdRes[i]; cmdClose(); c && c.run(); }
+  $("#openCmd").onclick = cmdOpen;
+  $("#cmdIn").oninput = () => { cmdSel = 0; cmdRender(); };
+  $("#cmdIn").onkeydown = (e) => {
+    if (e.key === "ArrowDown") { cmdSel = Math.min(cmdRes.length - 1, cmdSel + 1); cmdRender(); e.preventDefault(); }
+    if (e.key === "ArrowUp") { cmdSel = Math.max(0, cmdSel - 1); cmdRender(); e.preventDefault(); }
+    if (e.key === "Enter") cmdRun(cmdSel);
+  };
+  $("#cmdList").onclick = (e) => { const li = e.target.closest("li"); li && cmdRun(+li.dataset.ci); };
+  $("#cmd").onclick = (e) => { if (e.target.id === "cmd") cmdClose(); };
+
+  // ---------- лента ----------
+  function renderStrip() {
+    $("#strip").innerHTML = PROGRAM.map((p, i) => `<div class="c ${p.status} ${state.sel === i ? "sel" : ""}" data-i="${i}"><img src="${cover(p)}" alt=""><em>${mmss(p.dur)}</em>
+      ${p.status === "live" ? `<span class="bar" style="width:${(state.elapsed / p.dur) * 100}%"></span>` : ""}<div>${p.n} ${p.title}</div></div>`).join("");
+  }
+  $("#strip").addEventListener("click", (e) => { const c = e.target.closest(".c"); if (!c) return; state.sel = +c.dataset.i; ui.R.open = true; ui.R.tab = "inspector"; render(); renderStrip(); });
+
+  // ---------- эфир ----------
+  document.querySelectorAll("[data-tr]").forEach((b) => (b.onclick = () => FM.transport(b.dataset.tr)));
+  $("#master").value = state.master; $("#bed").value = state.bed;
+  $("#master").oninput = (e) => FM.setLevel("master", +e.target.value);
+  $("#bed").oninput = (e) => FM.setLevel("bed", +e.target.value);
+  FM.meter($("#meter")); FM.clock($("#clk"));
+  setInterval(() => { $("#dbV").textContent = $("#meter .db").textContent.replace(" dB", ""); }, 150);
+
+  let lastLive = -1;
+  FM.onChange((s) => {
+    const li = s.liveIdx, live = PROGRAM[li], ni = FM.nextIdx(), nx = PROGRAM[ni];
+    const now = $("#now");
+    now.className = "now " + (s.standby ? "standby" : !s.playing ? "off" : s.paused ? "paused" : "");
+    $("#nowLbl").textContent = s.standby ? "ЗАСТАВКА НА ЭКРАНЕ" : !s.playing ? "СТОП · ЭКРАН ЧЁРНЫЙ" : s.paused ? "ПАУЗА" : "СЕЙЧАС В ЭФИРЕ";
+    $("#pgmImg").src = live ? cover(live) : "";
+    $("#nowN").textContent = live ? `${live.n} · ${live.nom}` : ""; $("#nowT").textContent = live ? live.title : "—"; $("#nowS").textContent = live ? live.sub : "";
+    const rem = live ? live.dur - s.elapsed : 0;
+    $("#rem").textContent = "−" + mmss(rem); $("#remBox").classList.toggle("low", rem <= 30);
+    $("#progBar").style.width = live ? (s.elapsed / live.dur) * 100 + "%" : "0";
+    $("#pvwImg").src = nx ? cover(nx) : "";
+    $("#nxN").textContent = nx ? `${nx.n} · ${nx.nom} · ${mmss(nx.dur)}` : ""; $("#nxT").textContent = nx ? nx.title : "Конец программы"; $("#nxS").textContent = nx ? nx.sub : "";
+    $("#then").innerHTML = `<div class="lbl">ЗАТЕМ</div>` + PROGRAM.slice(ni + 1, ni + 4).map((p) => `<div class="it"><span>${p.n || "—"}</span><b>${p.title}</b><span>${mmss(p.dur)}</span></div>`).join("");
+    $("#mV").textContent = s.master + "%"; $("#bV").textContent = s.bed + "%";
+    $("#pos").textContent = `${li + 1} из ${PROGRAM.length}`;
+    $("#blockRem").textContent = mmss(PROGRAM.slice(li, 6).reduce((a, p) => a + p.dur, 0) - s.elapsed);
+    document.querySelector(".k.play").classList.toggle("on", s.playing && !s.paused);
+    document.querySelector(".k.pause").classList.toggle("on", s.paused);
+    document.querySelector(".k.standby").classList.toggle("on", s.standby);
+    if (lastLive !== li) { lastLive = li; renderStrip(); const c = $(".strip .c.live"); FM.reveal(c, $("#strip")); }
+    else { const b = $(".strip .c.live .bar"); if (b && live) b.style.width = (s.elapsed / live.dur) * 100 + "%"; }
+  });
+
+  // ---------- клавиши ----------
+  const keys = {
+    Space: () => FM.transport(state.playing && !state.paused ? "pause" : "play"),
+    KeyP: () => FM.transport("pause"), KeyN: () => FM.transport("next"), "shift+KeyS": () => FM.transport("stop"), KeyB: () => FM.transport("standby"),
+    "ctrl+KeyK": () => ($("#cmd").classList.contains("on") ? cmdClose() : cmdOpen()),
+    Escape: () => { if ($("#cmd").classList.contains("on")) cmdClose(); else { ui.L.open = ui.R.open = false; render(); } },
+  };
+  PANELS.forEach((p) => (keys[p.key] = () => toggle(p.id)));
+  FM.QUICK.forEach((q) => (keys["Key" + q.key] = () => FM.toast(q.icon + " " + q.label + " — только макет")));
+  FM.hotkeys(keys);
+
+  render();
+})();
+</script>
+</body>
+</html>

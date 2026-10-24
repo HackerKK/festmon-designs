@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FestMon · E · Сценарий</title>
+<link rel="stylesheet" href="assets/neutral.css">
+<link rel="stylesheet" href="assets/panels.css">
+<style>
+/* Раскладка «сценарий» (как QLab): программа — главный объект в центре,
+ * экраны и микшер — узкая колонка справа, панели — нижний ящик с вкладками. */
+:root { --drawerH: 280px; }
+.app { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 400px; grid-template-rows: minmax(0, 1fr) auto; }
+
+/* ---------- сценарий ---------- */
+.cue { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); }
+.go { display: grid; grid-template-columns: 220px 1fr auto; gap: 14px; align-items: center; padding: 14px 16px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.go .tk.next { height: 84px; font-size: 26px; letter-spacing: .1em; }
+.go .tk.next small { font-size: 11px; font-weight: 600; letter-spacing: .04em; opacity: .8; }
+.go .what small { display: block; color: var(--dim); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+.go .what b { font-size: 22px; }
+.go .what span { color: var(--dim); margin-left: 8px; }
+.go .side { text-align: right; }
+.go .side .lamp { margin-bottom: 6px; }
+.go .side div { font: 700 15px Consolas, monospace; }
+.cols, .cr { display: grid; grid-template-columns: 34px 92px minmax(0, 1fr) 80px 70px 80px 96px; gap: 12px; align-items: center; padding: 0 16px; }
+.cols { height: 30px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--border); flex: none; }
+.list { flex: 1; overflow: auto; }
+.cr { position: relative; min-height: 62px; border-bottom: 1px solid #22242b; cursor: pointer; }
+.cr:hover { background: #1b1d23; }
+.cr .i { font: 700 13px Consolas, monospace; color: var(--dim); text-align: right; }
+.cr img { width: 92px; height: 52px; object-fit: cover; border-radius: 4px; display: block; }
+.cr .t { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cr .s { color: var(--dim); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cr .c { font: 600 13px Consolas, monospace; }
+.cr .st { font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+.cr.done { opacity: .45; }
+.cr.done .st { color: var(--dim); }
+.cr.live { min-height: 108px; background: linear-gradient(90deg, rgba(47,111,216,.28), rgba(47,111,216,.06)); box-shadow: inset 4px 0 0 var(--run); }
+.cr.live img { width: 92px; height: 52px; outline: 2px solid var(--run); }
+.cr.live .t { font-size: 22px; }
+.cr.live .st { color: #fff; background: var(--run); padding: 3px 8px; border-radius: 3px; justify-self: start; }
+.cr.live .bigrem { font: 700 28px Consolas, monospace; }
+.cr.live .pb { position: absolute; left: 16px; right: 16px; bottom: 8px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
+.cr.live .pb i { display: block; height: 100%; background: var(--run); }
+.cr.next { box-shadow: inset 4px 0 0 var(--blue); background: rgba(77,163,255,.06); }
+.cr.next .st { color: var(--next-fg); }
+.cr.sel { outline: 2px solid var(--accent); outline-offset: -2px; }
+.cr.brk .t { font-style: italic; color: var(--dim); }
+.blk { padding: 10px 16px 4px; font-size: 11px; font-weight: 800; letter-spacing: .12em; color: var(--accent); text-transform: uppercase; background: var(--bg); position: sticky; top: 0; z-index: 1; }
+
+/* ---------- правая колонка: экраны + микшер ---------- */
+.right { grid-row: 1 / 3; grid-column: 2; display: flex; flex-direction: column; gap: 10px; padding: 12px; min-height: 0; overflow: auto; background: var(--panel); }
+.right h4 { margin: 0 0 4px; font-size: 11px; letter-spacing: .1em; color: var(--dim); text-transform: uppercase; display: flex; justify-content: space-between; }
+.right .scr { aspect-ratio: 16/9; flex: none; }
+.right .scr.pvw { width: 70%; align-self: flex-end; }
+.tr3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tr3 .tk { height: 56px; font-size: 13px; }
+.tr3 .tk span { font-size: 18px; }
+.tr3 .tk.play { grid-column: 1 / 4; height: 50px; flex-direction: row; gap: 10px; font-size: 15px; }
+.mixer { display: flex; gap: 16px; justify-content: center; background: var(--field); border-radius: 8px; padding: 12px; flex: none; }
+.strip { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--dim); font-weight: 700; letter-spacing: .06em; }
+.strip b { color: var(--text); font: 700 13px Consolas, monospace; }
+.strip .row { height: 170px; display: flex; gap: 6px; align-items: stretch; }
+.strip input[type=range] { writing-mode: vertical-lr; direction: rtl; width: 30px; height: 170px; }
+.strip .meter.v { width: 10px; }
+
+/* ---------- нижний ящик ---------- */
+.drawer { grid-column: 1; background: var(--panel); border-top: 1px solid var(--border); display: flex; flex-direction: column; height: var(--drawerH); position: relative; }
+.drawer.min { height: 36px; }
+.drawer .bar { height: 36px; display: flex; align-items: stretch; gap: 2px; padding: 0 8px; border-bottom: 1px solid var(--border); flex: none; }
+.drawer .bar button.t { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--dim); padding: 0 12px; cursor: pointer; font-weight: 600; font-size: 13px; }
+.drawer .bar button.t.on { color: var(--text); border-bottom-color: var(--accent); background: var(--panel2); }
+.drawer .bar .sp { flex: 1; }
+.drawer .bar .hint { align-self: center; font-size: 12px; color: var(--dim); margin-right: 8px; }
+.drawer .bar .ic { background: none; border: 0; color: var(--dim); cursor: pointer; width: 32px; }
+.drawer .panes { flex: 1; min-height: 0; display: flex; }
+.drawer.min .panes { display: none; }
+.drawer .pane { flex: 1; min-width: 0; overflow: auto; padding: 10px 14px; border-right: 1px solid var(--border); }
+.drawer .pane:last-child { border-right: 0; }
+.drawer .pane > h5 { margin: 0 0 8px; font-size: 11px; letter-spacing: .1em; color: var(--accent); text-transform: uppercase; }
+.grip { position: absolute; left: 0; right: 0; top: -4px; height: 8px; cursor: row-resize; z-index: 5; }
+.grip:hover { background: rgba(53,224,210,.35); }
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="cue">
+    <div class="go">
+      <button class="tk next" data-tr="next">GO ⏭<small>следующий номер</small><kbd>N</kbd></button>
+      <div class="what"><small>Пойдёт по GO</small><b id="goT"></b><span id="goS"></span></div>
+      <div class="side"><span class="lamp" id="lamp">В ЭФИРЕ</span><div id="clk"></div></div>
+    </div>
+    <div class="cols"><span>#</span><span>обложка</span><span>номер</span><span>номинация</span><span>длит.</span><span>старт</span><span>статус</span></div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <aside class="right">
+    <div><h4><span>Экран · проектор</span><span id="pgmTc"></span></h4>
+      <div class="scr pgm" id="pgm"><img alt=""><span class="tag">PGM</span><div class="sb">FESTMON</div><div class="cap"></div></div></div>
+    <div style="display:flex;flex-direction:column"><h4><span>Предпросмотр · следующий</span><span id="pvwD"></span></h4>
+      <div class="scr pvw" id="pvw"><img alt=""><span class="tag">PVW</span><div class="cap"></div></div></div>
+    <div class="tr3">
+      <button class="tk play" data-tr="play"><span>▶</span>ПУСК<kbd>Space</kbd></button>
+      <button class="tk pause" data-tr="pause"><span>❚❚</span>ПАУЗА<kbd>P</kbd></button>
+      <button class="tk stop" data-tr="stop"><span>■</span>СТОП<kbd>⇧S</kbd></button>
+      <button class="tk standby" data-tr="standby"><span>▣</span>ЗАСТАВКА<kbd>B</kbd></button>
+    </div>
+    <div class="mixer">
+      <div class="strip">МАСТЕР<div class="row"><input type="range" id="master" min="0" max="100"><div class="meter v" id="mL"><div class="fill"></div><div class="peak"></div></div><div class="meter v" id="mR"><div class="fill"></div><div class="peak"></div></div></div><b id="mV"></b></div>
+      <div class="strip">ФОН<div class="row"><input type="range" id="bed" min="0" max="100"></div><b id="bV"></b></div>
+      <div class="strip">ОСТАЛОСЬ<div class="row" style="align-items:center"><b id="rem" style="font-size:22px;writing-mode:vertical-lr;transform:rotate(180deg)"></b></div><b id="el"></b></div>
+    </div>
+  </aside>
+
+  <section class="drawer" id="drawer">
+    <div class="grip" id="grip"></div>
+    <div class="bar" id="bar"></div>
+    <div class="panes" id="panes"></div>
+  </section>
+</div>
+
+<script src="assets/common.js"></script>
+<script src="assets/panels.js"></script>
+<script>
+(function () {
+  const { PROGRAM, PANELS, state, mmss, cover } = FM;
+  const $ = (s) => document.querySelector(s);
+
+  // ---------- нижний ящик: вкладки, Ctrl+клик — несколько рядом ----------
+  let dr = FM.store.get("e-drawer", null) || { open: true, tabs: ["quick", "requests"], h: 280 };
+  const save = () => FM.store.set("e-drawer", dr);
+  function renderDrawer() {
+    const el = $("#drawer");
+    el.classList.toggle("min", !dr.open || !dr.tabs.length);
+    el.style.setProperty("--drawerH", dr.h + "px");
+    $("#bar").innerHTML = PANELS.map((p) => `<button class="t ${dr.open && dr.tabs.includes(p.id) ? "on" : ""}" data-t="${p.id}" title="${p.title} · ${p.key}">${p.icon} ${p.short}${p.badge ? ` <span class="p-chip">${p.badge}</span>` : ""}</button>`).join("") +
+      `<span class="sp"></span><span class="hint">Ctrl+клик — несколько рядом · <kbd>\`</kbd> свернуть</span><button class="ic" id="dTog" title="Свернуть / развернуть">${dr.open ? "▾" : "▴"}</button>`;
+    $("#panes").innerHTML = dr.open ? dr.tabs.map((id) => `<div class="pane"><h5>${PANELS.find((p) => p.id === id).title}</h5>${FM.renderPanel(id)}</div>`).join("") : "";
+    save();
+  }
+  function tab(id, multi) {
+    if (!dr.open) { dr.open = true; dr.tabs = [id]; }
+    else if (multi) dr.tabs = dr.tabs.includes(id) ? dr.tabs.filter((x) => x !== id) : [...dr.tabs, id].slice(-3);
+    else if (dr.tabs.length === 1 && dr.tabs[0] === id) dr.open = false;
+    else dr.tabs = [id];
+    renderDrawer();
+  }
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-t]"); if (t) tab(t.dataset.t, e.ctrlKey);
+    if (e.target.closest("#dTog")) { dr.open = !dr.open; renderDrawer(); }
+  });
+  $("#grip").addEventListener("pointerdown", (e) => {
+    const y0 = e.clientY, h0 = dr.h, g = e.target; g.setPointerCapture(e.pointerId);
+    g.onpointermove = (ev) => { dr.h = Math.max(140, Math.min(innerHeight * 0.6, h0 - (ev.clientY - y0))); dr.open = true; $("#drawer").classList.remove("min"); $("#drawer").style.setProperty("--drawerH", dr.h + "px"); };
+    g.onpointerup = () => { g.onpointermove = null; save(); };
+  });
+
+  // ---------- сценарий ----------
+  function renderList() {
+    let acc = -state.elapsed, now = Date.now(), html = `<div class="blk">Блок 1 · 18:00</div>`;
+    PROGRAM.forEach((p, i) => {
+      if (p.n === "2.1") html += `<div class="blk">Блок 2</div>`;
+      const start = p.status === "done" ? "—" : p.status === "live" ? "сейчас" : new Date(now + acc * 1000).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+      if (p.status !== "done") acc += p.dur;
+      const st = { done: "СЫГРАН", live: "ИДЁТ", next: "ДАЛЕЕ ▸ GO", queued: "" }[p.status];
+      const live = p.status === "live";
+      html += `<div class="cr ${p.status} ${p.kind === "break" ? "brk" : ""} ${state.sel === i ? "sel" : ""}" data-i="${i}">
+        <span class="i">${p.n || "·"}</span><img src="${cover(p)}" alt="">
+        <div style="min-width:0"><div class="t">${p.title}</div><div class="s">${p.sub}</div></div>
+        <span class="c dim">${p.nom || "—"}</span><span class="c">${mmss(p.dur)}</span>
+        <span class="c ${live ? "bigrem" : "dim"}">${live ? "−" + mmss(p.dur - state.elapsed) : start}</span><span class="st">${st}</span>
+        ${live ? `<div class="pb"><i style="width:${(state.elapsed / p.dur) * 100}%"></i></div>` : ""}</div>`;
+    });
+    $("#list").innerHTML = html;
+  }
+  $("#list").addEventListener("click", (e) => {
+    const r = e.target.closest(".cr"); if (!r) return;
+    state.sel = +r.dataset.i; renderList();
+    dr.open = true; if (!dr.tabs.includes("inspector")) dr.tabs = ["inspector", ...dr.tabs].slice(0, 3); renderDrawer();
+  });
+
+  // ---------- эфир ----------
+  document.querySelectorAll("[data-tr]").forEach((b) => (b.onclick = () => FM.transport(b.dataset.tr)));
+  $("#master").value = state.master; $("#bed").value = state.bed;
+  $("#master").oninput = (e) => FM.setLevel("master", +e.target.value);
+  $("#bed").oninput = (e) => FM.setLevel("bed", +e.target.value);
+  FM.meter($("#mL"), "v"); FM.meter($("#mR"), "v"); FM.clock($("#clk"));
+
+  let lastLive = -1, tick = 0;
+  FM.onChange((s) => {
+    const live = PROGRAM[s.liveIdx], nx = PROGRAM[FM.nextIdx()];
+    const mode = s.standby ? "standby" : !s.playing ? "" : s.paused ? "paused" : "live";
+    $("#lamp").className = "lamp " + mode; $("#lamp").textContent = { live: "● В ЭФИРЕ", paused: "❚❚ ПАУЗА", standby: "▣ ЗАСТАВКА", "": "■ СТОП" }[mode];
+    $("#goT").textContent = nx ? `${nx.n} ${nx.title}` : "Конец программы"; $("#goS").textContent = nx ? `${nx.sub} · ${mmss(nx.dur)}` : "";
+    const pg = $("#pgm"); pg.classList.toggle("on", mode === "live"); pg.classList.toggle("standby", s.standby);
+    pg.querySelector("img").src = live ? cover(live) : ""; pg.querySelector(".cap").textContent = live ? `${live.n} ${live.title}` : "";
+    $("#pgmTc").textContent = mmss(s.elapsed) + " / " + mmss(live ? live.dur : 0);
+    const pv = $("#pvw"); pv.querySelector("img").src = nx ? cover(nx) : ""; pv.querySelector(".cap").textContent = nx ? `${nx.n} ${nx.title}` : ""; $("#pvwD").textContent = nx ? mmss(nx.dur) : "";
+    $("#mV").textContent = s.master + "%"; $("#bV").textContent = s.bed + "%";
+    $("#rem").textContent = "−" + mmss(live ? live.dur - s.elapsed : 0); $("#el").textContent = mmss(s.elapsed);
+    document.querySelector(".tk.play").classList.toggle("on", mode === "live");
+    document.querySelector(".tk.pause").classList.toggle("on", s.paused);
+    document.querySelector(".tk.standby").classList.toggle("on", s.standby);
+    if (lastLive !== s.liveIdx || ++tick % 2 === 0) {
+      const first = lastLive !== s.liveIdx; lastLive = s.liveIdx; renderList();
+      if (first) requestAnimationFrame(() => FM.reveal($(".cr.live"), $("#list"), "y"));
+    }
+  });
+
+  const keys = {
+    Space: () => FM.transport(state.playing && !state.paused ? "pause" : "play"),
+    KeyP: () => FM.transport("pause"), KeyN: () => FM.transport("next"), "shift+KeyS": () => FM.transport("stop"), KeyB: () => FM.transport("standby"),
+    Backquote: () => { dr.open = !dr.open; renderDrawer(); },
+  };
+  PANELS.forEach((p) => { keys[p.key] = () => tab(p.id, false); keys["ctrl+" + p.key] = () => tab(p.id, true); });
+  FM.QUICK.forEach((q) => (keys["Key" + q.key] = () => FM.toast(q.icon + " " + q.label + " — только макет")));
+  FM.hotkeys(keys);
+  renderDrawer();
+})();
+</script>
+</body>
+</html>

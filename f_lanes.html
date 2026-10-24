@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FestMon · F · Дорожки и окна</title>
+<link rel="stylesheet" href="assets/neutral.css">
+<link rel="stylesheet" href="assets/panels.css">
+<style>
+/* Раскладка «монтажка»: два экрана на всю ширину сверху, полоса транспорта,
+ * снизу дорожки по времени (ширина клипа = длительность). Панели — плавающие
+ * окна поверх, сворачиваются в «панель задач» внизу. */
+.app { height: 100%; display: grid; grid-template-rows: minmax(0, 1fr) auto minmax(220px, 34%) 40px; }
+
+/* ---------- экраны ---------- */
+.mons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 10px 6px; min-height: 0; }
+.mon { display: flex; flex-direction: column; min-height: 0; }
+.mon-h { display: flex; gap: 10px; align-items: baseline; font-size: 12px; color: var(--dim); margin-bottom: 4px; }
+.mon-h b { color: var(--text); font-size: 13px; letter-spacing: .06em; }
+.mon-h .sp { flex: 1; }
+.mon .wrap { flex: 1; min-height: 0; display: grid; place-items: center; background: #0b0c0f; border-radius: 6px; }
+.mon .scr { width: 100%; aspect-ratio: 16/9; max-height: 100%; }
+.mon .scr .cap { font-size: 18px; }
+
+/* ---------- полоса транспорта ---------- */
+.trans { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--panel); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.trans .tk { height: 52px; min-width: 96px; padding: 0 12px; flex-direction: row; gap: 8px; font-size: 14px; }
+.trans .tk span { font-size: 18px; }
+.trans .tk.play { min-width: 150px; }
+.trans .tk.next { min-width: 150px; }
+.trans .sep { width: 1px; align-self: stretch; background: var(--border); margin: 0 6px; }
+.tc { font: 700 26px Consolas, monospace; min-width: 120px; text-align: center; }
+.tc small { display: block; font: 600 10px "Segoe UI"; color: var(--dim); letter-spacing: .1em; }
+.tc.rem { color: #ffe082; }
+.lv { display: grid; grid-template-columns: 54px 150px 44px; gap: 2px 8px; align-items: center; font-size: 11px; }
+.lv span { color: var(--dim); font-weight: 700; letter-spacing: .06em; }
+.lv b { font: 700 12px Consolas, monospace; text-align: right; }
+.lv input { width: 100%; }
+.trans .sp { flex: 1; }
+
+/* ---------- дорожки ---------- */
+.tl { display: grid; grid-template-columns: 120px minmax(0, 1fr); grid-template-rows: 26px 1fr; min-height: 0; background: var(--bg); }
+.tl .corner { display: flex; align-items: center; gap: 6px; padding: 0 8px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 11px; color: var(--dim); }
+.tl .corner input { width: 60px; }
+.heads { border-right: 1px solid var(--border); display: grid; grid-template-rows: repeat(3, 1fr); }
+.heads div { display: flex; align-items: center; padding: 0 10px; font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--accent); border-bottom: 1px solid #22242b; background: var(--panel); }
+.scroll { grid-column: 2; grid-row: 1 / 3; overflow-x: auto; overflow-y: hidden; position: relative; }
+.canvas { position: relative; height: 100%; }
+.ruler { position: sticky; top: 0; height: 26px; border-bottom: 1px solid var(--border); background: var(--panel); }
+.ruler i { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--border-hi); font: 10px Consolas, monospace; color: var(--dim); padding: 2px 4px; font-style: normal; }
+.lanes { position: absolute; top: 26px; bottom: 0; left: 0; right: 0; display: grid; grid-template-rows: repeat(3, 1fr); }
+.lane { position: relative; border-bottom: 1px solid #22242b; }
+.clip { position: absolute; top: 6px; bottom: 6px; border-radius: 5px; overflow: hidden; background: var(--panel2); border: 1px solid var(--border); cursor: pointer; display: flex; }
+.clip img { height: 100%; aspect-ratio: 16/9; object-fit: cover; flex: none; }
+.clip .tx { padding: 4px 8px; min-width: 0; }
+.clip .tx b { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clip .tx span { font: 11px Consolas, monospace; color: var(--dim); }
+.clip.done { opacity: .45; }
+.clip.live { border: 2px solid var(--run); background: #1c2a44; }
+.clip.next { border: 2px dashed var(--blue); }
+.clip.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+.clip.brk { background: repeating-linear-gradient(135deg, var(--panel2) 0 8px, #2a2d37 8px 16px); }
+.clip.mat { background: #1f2a2a; }
+.clip.mat .wave { flex: 1; background: repeating-linear-gradient(90deg, rgba(53,224,210,.45) 0 2px, transparent 2px 5px); mask-image: linear-gradient(transparent 20%, #000 50%, transparent 80%); }
+.clip.bed { background: #2a2433; border-color: #4a3d5a; }
+.clip.bed .tx b { color: #c9b8ff; }
+.head-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--live); z-index: 3; pointer-events: none; }
+.head-line::before { content: ""; position: absolute; top: 0; left: -6px; border: 7px solid transparent; border-top-color: var(--live); }
+
+/* ---------- панель задач + плавающие окна ---------- */
+.task { display: flex; align-items: center; gap: 4px; padding: 0 8px; background: var(--panel); border-top: 1px solid var(--border); }
+.task button.w { height: 30px; padding: 0 12px; border-radius: 5px; border: 1px solid transparent; background: none; color: var(--dim); cursor: pointer; font-size: 13px; position: relative; }
+.task button.w:hover { background: var(--panel2); }
+.task button.w.open { color: var(--text); background: var(--panel2); border-color: var(--border); }
+.task button.w.open::after { content: ""; position: absolute; left: 30%; right: 30%; bottom: 1px; height: 2px; background: var(--accent); border-radius: 2px; }
+.task .sp { flex: 1; }
+.task .lamp { margin-right: 8px; }
+.win { position: fixed; z-index: 20; background: var(--panel); border: 1px solid var(--border-hi); border-radius: 8px; box-shadow: 0 18px 50px rgba(0,0,0,.55); display: flex; flex-direction: column; min-width: 260px; min-height: 160px; resize: both; overflow: hidden; }
+.win.top { z-index: 21; border-color: var(--accent); }
+.win .wh { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 4px 0 10px; background: var(--panel2); cursor: move; user-select: none; flex: none; }
+.win .wh b { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; flex: 1; }
+.win .wh button { width: 26px; height: 24px; border: 0; background: none; color: var(--dim); border-radius: 4px; cursor: pointer; }
+.win .wh button:hover { background: var(--border); color: var(--text); }
+.win .wb { flex: 1; overflow: auto; padding: 10px; }
+.win.ghost { opacity: .25; }
+body.peek .win { opacity: .12; pointer-events: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="mons">
+    <div class="mon"><div class="mon-h"><b>ПРЕДПРОСМОТР</b>следующий номер<span class="sp"></span><span id="pvwD"></span></div>
+      <div class="wrap"><div class="scr pvw" id="pvw"><img alt=""><span class="tag">PVW</span><div class="cap"></div></div></div></div>
+    <div class="mon"><div class="mon-h"><b>ЭКРАН</b>зеркало проектора<span class="sp"></span><span>1920×1080 · 60 fps</span></div>
+      <div class="wrap"><div class="scr pgm" id="pgm"><img alt=""><span class="tag">PGM</span><div class="sb">FESTMON</div><div class="cap"></div></div></div></div>
+  </section>
+
+  <section class="trans">
+    <button class="tk stop" data-tr="stop"><span>■</span>СТОП<kbd>⇧S</kbd></button>
+    <button class="tk pause" data-tr="pause"><span>❚❚</span>ПАУЗА<kbd>P</kbd></button>
+    <button class="tk play" data-tr="play"><span>▶</span>ПУСК<kbd>Space</kbd></button>
+    <button class="tk next" data-tr="next"><span>⏭</span>СЛЕДУЮЩИЙ<kbd>N</kbd></button>
+    <button class="tk standby" data-tr="standby"><span>▣</span>ЗАСТАВКА<kbd>B</kbd></button>
+    <div class="sep"></div>
+    <div class="tc"><small>ПРОШЛО</small><span id="el"></span></div>
+    <div class="tc rem"><small>ОСТАЛОСЬ</small><span id="rem"></span></div>
+    <span class="sp"></span>
+    <div class="lv">
+      <span>МАСТЕР</span><input type="range" id="master" min="0" max="100"><b id="mV"></b>
+      <span>УРОВЕНЬ</span><div class="meter" id="meter"><div class="fill"></div><div class="peak"></div><span class="db"></span></div><b id="dbV" class="dim"></b>
+      <span>ФОН</span><input type="range" id="bed" min="0" max="100"><b id="bV"></b>
+    </div>
+  </section>
+
+  <section class="tl">
+    <div class="corner">масштаб <input type="range" id="zoom" min="30" max="160" value="70"></div>
+    <div class="heads"><div>ОБЛОЖКА</div><div>МАТЕРИАЛ</div><div>ФОН · МУЗЫКА</div></div>
+    <div class="scroll" id="scroll"><div class="canvas" id="canvas"><div class="ruler" id="ruler"></div><div class="lanes" id="lanes"></div><div class="head-line" id="ph"></div></div></div>
+  </section>
+
+  <nav class="task" id="task"></nav>
+</div>
+
+<script src="assets/common.js"></script>
+<script src="assets/panels.js"></script>
+<script>
+(function () {
+  const { PROGRAM, PANELS, BED, state, mmss, cover } = FM;
+  const $ = (s) => document.querySelector(s);
+
+  // ---------- плавающие окна ----------
+  const DEF = {
+    inspector: { open: false, x: 1180, y: 60, w: 400, h: 470 }, files: { open: false, x: 20, y: 60, w: 330, h: 420 },
+    bed: { open: false, x: 360, y: 80, w: 330, h: 400 }, quick: { open: true, x: 16, y: 210, w: 340, h: 260 },
+    requests: { open: true, x: 16, y: 40, w: 340, h: 160 }, plugins: { open: false, x: 700, y: 120, w: 340, h: 300 },
+  };
+  let W = FM.store.get("f-wins", null) || JSON.parse(JSON.stringify(DEF));
+  let topId = null;
+  const save = () => FM.store.set("f-wins", W);
+
+  function renderTask() {
+    $("#task").innerHTML = PANELS.map((p) => `<button class="w ${W[p.id].open ? "open" : ""}" data-w="${p.id}" title="${p.title} · ${p.key}">${p.icon} ${p.short}${p.badge ? ` <span class="p-chip">${p.badge}</span>` : ""}</button>`).join("") +
+      `<span class="sp"></span><button class="btn" id="tile" title="Разложить открытые окна по правому краю">▥ Разложить</button>
+       <button class="btn" id="peek" title="Удерживайте, чтобы заглянуть под окна (Alt)">👁 Под окна</button>
+       <button class="btn" id="hideAll" title="Свернуть все окна (Ctrl+M)">▁ Свернуть все</button>
+       <button class="btn" id="reset">↺</button><span class="lamp" id="lamp" style="margin-left:8px">В ЭФИРЕ</span><b class="mono" id="clk"></b>`;
+    FM.clock($("#clk"));
+  }
+  function renderWins() {
+    document.querySelectorAll(".win").forEach((w) => w.remove());
+    PANELS.forEach((p) => {
+      const s = W[p.id]; if (!s.open) return;
+      const el = document.createElement("section");
+      el.className = "win" + (topId === p.id ? " top" : ""); el.dataset.id = p.id;
+      Object.assign(el.style, { left: s.x + "px", top: s.y + "px", width: s.w + "px", height: s.h + "px" });
+      el.innerHTML = `<div class="wh"><span>${p.icon}</span><b>${p.title}</b><kbd>${p.key}</kbd><button data-min="${p.id}" title="Свернуть в панель задач">▁</button></div><div class="wb">${FM.renderPanel(p.id)}</div>`;
+      document.body.appendChild(el);
+      new ResizeObserver(() => { s.w = el.offsetWidth; s.h = el.offsetHeight; save(); }).observe(el);
+    });
+    renderTask(); save();
+  }
+  function toggle(id) { W[id].open = !W[id].open; topId = W[id].open ? id : topId; renderWins(); }
+  document.addEventListener("click", (e) => {
+    const w = e.target.closest("[data-w]"); if (w) toggle(w.dataset.w);
+    const m = e.target.closest("[data-min]"); if (m) { W[m.dataset.min].open = false; renderWins(); }
+    if (e.target.closest("#hideAll")) { PANELS.forEach((p) => (W[p.id].open = false)); renderWins(); }
+    if (e.target.closest("#reset")) { W = JSON.parse(JSON.stringify(DEF)); renderWins(); }
+    if (e.target.closest("#tile")) {
+      const open = PANELS.filter((p) => W[p.id].open), h = Math.floor((innerHeight - 60) / Math.max(1, open.length));
+      open.forEach((p, i) => Object.assign(W[p.id], { x: innerWidth - 360, y: 10 + i * h, w: 350, h: h - 8 }));
+      renderWins();
+    }
+  });
+  // «заглянуть под окна»: пока нажата кнопка или Alt — окна прозрачные
+  document.addEventListener("pointerdown", (e) => { if (e.target.closest("#peek")) document.body.classList.add("peek"); });
+  document.addEventListener("pointerup", () => document.body.classList.remove("peek"));
+  document.addEventListener("keydown", (e) => { if (e.key === "Alt") { e.preventDefault(); document.body.classList.add("peek"); } });
+  document.addEventListener("keyup", (e) => { if (e.key === "Alt") document.body.classList.remove("peek"); });
+  // перетаскивание окна за заголовок
+  document.addEventListener("pointerdown", (e) => {
+    const win = e.target.closest(".win"); if (!win) return;
+    if (topId !== win.dataset.id) { topId = win.dataset.id; document.querySelectorAll(".win").forEach((x) => x.classList.toggle("top", x === win)); }
+    const h = e.target.closest(".wh"); if (!h || e.target.closest("button")) return;
+    const s = W[win.dataset.id], x0 = e.clientX - s.x, y0 = e.clientY - s.y;
+    h.setPointerCapture(e.pointerId);
+    h.onpointermove = (ev) => { s.x = Math.max(0, Math.min(innerWidth - 80, ev.clientX - x0)); s.y = Math.max(0, Math.min(innerHeight - 40, ev.clientY - y0)); win.style.left = s.x + "px"; win.style.top = s.y + "px"; };
+    h.onpointerup = () => { h.onpointermove = null; save(); };
+  });
+
+  // ---------- дорожки ----------
+  let pps = 0.7; // пикселей на секунду
+  function liveStart() { let t = 0; for (let i = 0; i < state.liveIdx; i++) t += PROGRAM[i].dur; return t; }
+  function renderLanes() {
+    const total = PROGRAM.reduce((a, p) => a + p.dur, 0);
+    $("#canvas").style.width = total * pps + 400 + "px";
+    let r = "";
+    for (let m = 0; m * 60 < total + 300; m += pps < 0.5 ? 5 : 2) r += `<i style="left:${m * 60 * pps}px">${m}:00</i>`;
+    $("#ruler").innerHTML = r;
+    let t = 0, cov = "", mat = "";
+    PROGRAM.forEach((p, i) => {
+      const L = t * pps, Wd = Math.max(40, p.dur * pps - 4);
+      const cls = `clip ${p.status} ${p.kind === "break" ? "brk" : ""} ${state.sel === i ? "sel" : ""}`;
+      cov += `<div class="${cls}" data-i="${i}" style="left:${L}px;width:${Wd}px"><img src="${cover(p)}" alt=""><div class="tx"><b>${p.n} ${p.title}</b><span>${mmss(p.dur)}</span></div></div>`;
+      if (p.kind !== "break") mat += `<div class="${cls} mat" data-i="${i}" style="left:${L}px;width:${Wd}px"><div class="tx"><b>${p.kind.toUpperCase()}</b><span>${p.n}</span></div><div class="wave"></div></div>`;
+      t += p.dur;
+    });
+    // фон звучит в антракте и между блоками
+    let bed = "", bt = 0;
+    PROGRAM.forEach((p) => { if (p.kind === "break") { let x = bt; BED.forEach((b) => { if (x - bt < p.dur) bed += `<div class="clip bed" style="left:${x * pps}px;width:${Math.min(b.dur, bt + p.dur - x) * pps - 4}px"><div class="tx"><b>♫ ${b.t}</b><span>${mmss(b.dur)}</span></div></div>`; x += b.dur; }); } bt += p.dur; });
+    $("#lanes").innerHTML = `<div class="lane">${cov}</div><div class="lane">${mat}</div><div class="lane">${bed}</div>`;
+    movePh();
+  }
+  function movePh() { $("#ph").style.left = (liveStart() + state.elapsed) * pps + "px"; }
+  $("#zoom").oninput = (e) => { pps = e.target.value / 100; renderLanes(); };
+  $("#lanes").addEventListener("click", (e) => {
+    const c = e.target.closest(".clip[data-i]"); if (!c) return;
+    state.sel = +c.dataset.i; W.inspector.open = true; topId = "inspector"; renderLanes(); renderWins();
+  });
+
+  // ---------- эфир ----------
+  document.querySelectorAll("[data-tr]").forEach((b) => (b.onclick = () => FM.transport(b.dataset.tr)));
+  $("#master").value = state.master; $("#bed").value = state.bed;
+  $("#master").oninput = (e) => FM.setLevel("master", +e.target.value);
+  $("#bed").oninput = (e) => FM.setLevel("bed", +e.target.value);
+  FM.meter($("#meter"));
+  setInterval(() => { $("#dbV").textContent = $("#meter .db").textContent.replace(" dB", ""); }, 150);
+
+  renderWins();
+  let lastLive = -1;
+  FM.onChange((s) => {
+    const live = PROGRAM[s.liveIdx], nx = PROGRAM[FM.nextIdx()];
+    const mode = s.standby ? "standby" : !s.playing ? "" : s.paused ? "paused" : "live";
+    const lamp = $("#lamp"); if (lamp) { lamp.className = "lamp " + mode; lamp.textContent = { live: "● В ЭФИРЕ", paused: "❚❚ ПАУЗА", standby: "▣ ЗАСТАВКА", "": "■ СТОП" }[mode]; }
+    const pg = $("#pgm"); pg.classList.toggle("on", mode === "live"); pg.classList.toggle("standby", s.standby);
+    pg.querySelector("img").src = live ? cover(live) : ""; pg.querySelector(".cap").textContent = live ? `${live.n} ${live.title} — ${live.sub}` : "";
+    const pv = $("#pvw"); pv.querySelector("img").src = nx ? cover(nx) : ""; pv.querySelector(".cap").textContent = nx ? `${nx.n} ${nx.title} — ${nx.sub}` : "Конец программы";
+    $("#pvwD").textContent = nx ? mmss(nx.dur) : "";
+    $("#el").textContent = mmss(s.elapsed); $("#rem").textContent = "−" + mmss(live ? live.dur - s.elapsed : 0);
+    $("#mV").textContent = s.master + "%"; $("#bV").textContent = s.bed + "%";
+    document.querySelector(".tk.play").classList.toggle("on", mode === "live");
+    document.querySelector(".tk.pause").classList.toggle("on", s.paused);
+    document.querySelector(".tk.standby").classList.toggle("on", s.standby);
+    if (lastLive !== s.liveIdx) { lastLive = s.liveIdx; renderLanes(); $("#scroll").scrollLeft = Math.max(0, (liveStart() - 60) * pps); }
+    else movePh();
+  });
+
+  const keys = {
+    Space: () => FM.transport(state.playing && !state.paused ? "pause" : "play"),
+    KeyP: () => FM.transport("pause"), KeyN: () => FM.transport("next"), "shift+KeyS": () => FM.transport("stop"), KeyB: () => FM.transport("standby"),
+    "ctrl+KeyM": () => $("#hideAll").click(),
+  };
+  PANELS.forEach((p) => (keys[p.key] = () => toggle(p.id)));
+  FM.QUICK.forEach((q) => (keys["Key" + q.key] = () => FM.toast(q.icon + " " + q.label + " — только макет")));
+  FM.hotkeys(keys);
+})();
+</script>
+</body>
+</html>

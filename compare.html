@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FestMon · макеты панели оператора</title>
+<style>
+:root { --bg: #111217; --card: #1b1d24; --border: #2e313b; --text: #eceef3; --dim: #9196a5; --ok: #3ddc84; --bad: #ff6b6b; --accent: #35e0d2; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+main { max-width: 1440px; margin: 0 auto; padding: 28px 24px 60px; }
+h1 { margin: 0 0 4px; font-size: 26px; }
+.lead { color: var(--dim); margin: 0 0 24px; max-width: 900px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(620px, 1fr)); gap: 20px; }
+.v { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+.thumb { position: relative; aspect-ratio: 16/9; overflow: hidden; background: #000; border-bottom: 1px solid var(--border); }
+.thumb iframe { position: absolute; left: 0; top: 0; width: 1600px; height: 900px; border: 0; transform-origin: 0 0; pointer-events: none; }
+.thumb a { position: absolute; inset: 0; }
+.body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.body h2 { margin: 0; font-size: 19px; display: flex; align-items: center; gap: 10px; }
+.body h2 span { font-size: 12px; font-weight: 700; color: #111; background: var(--accent); border-radius: 5px; padding: 1px 7px; }
+.body p { margin: 0; color: var(--dim); }
+.pc { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 14px; }
+.pc ul { margin: 4px 0 0; padding-left: 18px; }
+.pc li { margin: 3px 0; }
+.pc h4 { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.pc .p h4 { color: var(--ok); } .pc .m h4 { color: var(--bad); }
+.hide { font-size: 13px; background: #14161b; border-radius: 8px; padding: 8px 12px; color: var(--dim); }
+.hide b { color: var(--text); }
+.open { margin-top: auto; align-self: flex-start; background: var(--accent); color: #062421; text-decoration: none; font-weight: 700; padding: 8px 16px; border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 14px; background: var(--card); border-radius: 12px; overflow: hidden; }
+th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { color: var(--dim); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+td:first-child { color: var(--dim); width: 220px; }
+.common { margin-top: 30px; color: var(--dim); font-size: 14px; }
+kbd, .common kbd { font: 600 12px Consolas, monospace; background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; color: var(--text); }
+@media (max-width: 700px) { .grid { grid-template-columns: 1fr; } .pc { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>FestMon — варианты панели оператора</h1>
+  <p class="lead">Семь интерактивных макетов для выбора направления. Только интерфейс: данные фейковые, кнопки эфира меняют лишь картинку. В каждом есть таймлайн номеров, пуск/пауза/стоп/следующий/заставка, мастер-громкость с метром, громкость фона, предпросмотр и зеркало экрана, а второстепенные панели скрываются и показываются. Раскладка запоминается в браузере (localStorage). Лучше смотреть на 1600×900 и шире.</p>
+
+  <div class="grid">
+    <article class="v">
+      <div class="thumb"><iframe src="a_console.html" loading="lazy" tabindex="-1"></iframe><a href="a_console.html" aria-label="Открыть A"></a></div>
+      <div class="body">
+        <h2><span>A</span> Эфирный пульт</h2>
+        <p>Эволюция текущей Tk-панели: та же палитра из <code>panel/theme.py</code>, PVW → кнопки → PGM как у видеомикшера, лента номеров снизу, две колонки-дока с вкладками.</p>
+        <div class="hide"><b>Скрытие:</b> рельса иконок слева, F1–F6, Ctrl+[ / ], сворачиваемый таймлайн (Ctrl+T), ширина колонок перетаскивается, ⇄ переносит вкладку в другую колонку, F11 — «только эфир».</div>
+        <div class="pc"><div class="p"><h4>Плюсы</h4><ul><li>Меньше всего переучиваться, цвета и смыслы («идёт» синей рамкой) те же</li><li>Всё эфирное видно сразу, ничего не выезжает поверх</li><li>Проще всего перенести в Tk: PanedWindow + Notebook</li></ul></div>
+          <div class="m"><h4>Минусы</h4><ul><li>Самый плотный, на 1200×700 мониторы мелкие</li><li>Две колонки съедают ширину, если их не сворачивать</li><li>Визуально «как сейчас», без вау-эффекта</li></ul></div></div>
+        <a class="open" href="a_console.html">Открыть →</a>
+      </div>
+    </article>
+
+    <article class="v">
+      <div class="thumb"><iframe src="b_dock_grid.html" loading="lazy" tabindex="-1"></iframe><a href="b_dock_grid.html" aria-label="Открыть B"></a></div>
+      <div class="body">
+        <h2><span>B</span> Докируемая сетка</h2>
+        <p>Графит и янтарь. Слева вертикальный рандаун (обложка, время, «через N мин»), в центре мониторы и транспорт. Панели перетаскиваются за заголовок в зоны слева, справа и снизу.</p>
+        <div class="hide"><b>Скрытие:</b> перетаскивание между зонами, ▾ сворачивает панель до заголовка, ✕ отправляет её в «лоток» в шапке, меню «Вид», пресеты «Подготовка / Эфир / Звук / Моя» (Alt+1…4), Ctrl+S сохраняет свою раскладку.</div>
+        <div class="pc"><div class="p"><h4>Плюсы</h4><ul><li>Максимум гибкости: подготовка и эфир — разные раскладки одной клавишей</li><li>В рандауне видно время старта каждого номера</li><li>Вертикальный список вмещает больше номеров</li></ul></div>
+          <div class="m"><h4>Минусы</h4><ul><li>Свобода = риск «сломать» раскладку перед эфиром (лечится пресетами)</li><li>Самый дорогой в Tk: drag-n-drop доков придётся писать самим</li><li>Обложки в списке мельче, чем в ленте</li></ul></div></div>
+        <a class="open" href="b_dock_grid.html">Открыть →</a>
+      </div>
+    </article>
+
+    <article class="v">
+      <div class="thumb"><iframe src="c_focus.html" loading="lazy" tabindex="-1"></iframe><a href="c_focus.html" aria-label="Открыть C"></a></div>
+      <div class="body">
+        <h2><span>C</span> Только эфир</h2>
+        <p>Почти чёрный фон и крупные цифры: «Сейчас» с огромным обратным отсчётом, «Далее» с предпросмотром и «Затем». Кнопки высотой 92 px. Всё остальное спрятано в выезжающие панели.</p>
+        <div class="hide"><b>Скрытие:</b> ярлыки на краях экрана, F1–F6, Esc закрывает, 📌 закрепляет панель (она сдвигает эфир, а не перекрывает), Ctrl+K — палитра команд: панели, действия, поиск номера.</div>
+        <div class="pc"><div class="p"><h4>Плюсы</h4><ul><li>Лучше всего читается в тёмном зале и под стрессом</li><li>Трудно промахнуться: крупные цели, ничего лишнего</li><li>Палитра команд быстро открывает что угодно</li></ul></div>
+          <div class="m"><h4>Минусы</h4><ul><li>Для подготовки программы неудобен: панели постоянно открывать</li><li>Лента номеров компактная, без слоёв</li><li>Плавающие панели перекрывают мониторы, если их не закрепить</li></ul></div></div>
+        <a class="open" href="c_focus.html">Открыть →</a>
+      </div>
+    </article>
+
+    <article class="v">
+      <div class="thumb"><iframe src="d_aurora.html" loading="lazy" tabindex="-1"></iframe><a href="d_aurora.html" aria-label="Открыть D"></a></div>
+      <div class="body">
+        <h2><span>D</span> Аврора (по референсу)</h2>
+        <p>Тёмно-фиолетовый, градиенты, скругления 22 px, мягкие тени. Карточка «Сейчас» как банковская карта, круглые кнопки эфира, кольцо прогресса у идущего номера, справа колонка карточек-аккордеонов.</p>
+        <div class="hide"><b>Скрытие:</b> карточки раскрываются по клику или F1–F6, переключатели «Показывать карточки» (кнопка-пилюля «панели»), Ctrl+\ прячет всю колонку, F11 — только эфир.</div>
+        <div class="pc"><div class="p"><h4>Плюсы</h4><ul><li>Самый «праздничный», подходит к фестивалю и вебу для зрителей</li><li>Аккордеон держит открытыми сразу несколько панелей</li><li>Крупная карточка «Сейчас» с отсчётом видна издалека</li></ul></div>
+          <div class="m"><h4>Минусы</h4><ul><li>Градиенты и тени слабее по контрасту, чем A/C; цвета статусов спорят с акцентом</li><li>Скругления и тени в Tk почти не повторить (нужен Canvas или другой тулкит)</li><li>Меньше плотность, на 1200×700 тесно</li></ul></div></div>
+        <a class="open" href="d_aurora.html">Открыть →</a>
+      </div>
+    </article>
+  </div>
+
+  <h1 style="margin-top:36px;font-size:22px">Другое расположение: E · F · G</h1>
+  <p class="lead">У этих трёх один и тот же цвет (палитра текущей панели), так что сравнивается только расположение. Каждый ломает схему A–D «мониторы сверху, лента снизу, панели сбоку».</p>
+  <div class="grid">
+    <article class="v">
+      <div class="thumb"><iframe src="e_cuelist.html" loading="lazy" tabindex="-1"></iframe><a href="e_cuelist.html" aria-label="Открыть E"></a></div>
+      <div class="body">
+        <h2><span>E</span> Сценарий (cue list)</h2>
+        <p>Главное на экране — программа: вертикальный список-сценарий по центру, как в QLab. Идущий номер раскрыт крупно, сверху огромная кнопка GO с названием следующего номера. Экраны и микшер с вертикальными фейдерами — в узкой колонке справа.</p>
+        <div class="hide"><b>Скрытие:</b> нижний ящик с вкладками, как DevTools: клик по вкладке открывает/сворачивает, Ctrl+клик ставит до 3 панелей рядом, край ящика тянется по высоте, <kbd>`</kbd> сворачивает ящик, F1–F6.</div>
+        <div class="pc"><div class="p"><h4>Плюсы</h4><ul><li>Видно всю программу и время старта каждого номера</li><li>Одна главная кнопка GO — трудно ошибиться</li><li>Ящик снизу не перекрывает экраны</li></ul></div>
+          <div class="m"><h4>Минусы</h4><ul><li>Экраны маленькие (колонка 400 px)</li><li>Обложки мелкие, программа читается как таблица</li><li>Ящик отнимает высоту у списка</li></ul></div></div>
+        <a class="open" href="e_cuelist.html">Открыть →</a>
+      </div>
+    </article>
+    <article class="v">
+      <div class="thumb"><iframe src="f_lanes.html" loading="lazy" tabindex="-1"></iframe><a href="f_lanes.html" aria-label="Открыть F"></a></div>
+      <div class="body">
+        <h2><span>F</span> Дорожки и окна</h2>
+        <p>Как монтажка: два больших экрана на всю ширину, под ними полоса транспорта, снизу дорожки по времени — обложка, материал (волна), фоновая музыка. Ширина клипа равна длительности, красная линия — текущий момент.</p>
+        <div class="hide"><b>Скрытие:</b> плавающие окна поверх: тянутся за заголовок, меняют размер за угол, сворачиваются в «панель задач» внизу. Кнопки «Разложить», «Свернуть все» (Ctrl+M), «Под окна» (или удерживать Alt) — окна становятся прозрачными.</div>
+        <div class="pc"><div class="p"><h4>Плюсы</h4><ul><li>Самые крупные экраны</li><li>Видно, где в программе антракт и фон, сколько осталось до блока</li><li>Окна можно расставить как угодно, хоть на второй монитор</li></ul></div>
+          <div class="m"><h4>Минусы</h4><ul><li>Окна перекрывают экраны — нужна дисциплина</li><li>Дорожки по времени хуже для перестановки номеров</li><li>Больше всего кода в Tk (Toplevel-окна)</li></ul></div></div>
+        <a class="open" href="f_lanes.html">Открыть →</a>
+      </div>
+    </article>
+    <article class="v">
+      <div class="thumb"><iframe src="g_split.html" loading="lazy" tabindex="-1"></iframe><a href="g_split.html" aria-label="Открыть G"></a></div>
+      <div class="body">
+        <h2><span>G</span> Эфир | Подготовка</h2>
+        <p>Экран разделён на две половины. Слева — только то, что видит зал: проектор, «сейчас» с отсчётом, следующие три номера, кнопки и громкость. Справа — рабочий стол подготовки: предпросмотр и вкладки (программа сеткой карточек, инспектор, файлы…).</p>
+        <div class="hide"><b>Скрытие:</b> вкладки справа (F1–F7), Shift+клик открывает вторую вкладку в нижней половине, разделитель тянется. Три режима: «Только эфир» (Ctrl+←), «Поровну» (Ctrl+↓), «Подготовка» (Ctrl+→) — эфир сжимается в колонку-страховку 300 px.</div>
+        <div class="pc"><div class="p"><h4>Плюсы</h4><ul><li>Чёткая граница «что в эфире» / «что я готовлю»</li><li>Перед эфиром — Ctrl+←, и лишнего нет совсем</li><li>Сетка карточек удобна, чтобы окинуть программу взглядом</li></ul></div>
+          <div class="m"><h4>Минусы</h4><ul><li>В режиме «поровну» обе половины тесноваты на 1366 px</li><li>Переключение вкладок — лишний клик для частых панелей</li><li>Экран эфира и предпросмотр далеко друг от друга</li></ul></div></div>
+        <a class="open" href="g_split.html">Открыть →</a>
+      </div>
+    </article>
+  </div>
+  <table>
+    <tr><th></th><th>A · Пульт</th><th>B · Сетка</th><th>C · Только эфир</th><th>D · Аврора</th><th>E · Сценарий</th><th>F · Дорожки</th><th>G · Половины</th></tr>
+    <tr><td>Читаемость в тёмном зале</td><td>хорошо</td><td>хорошо</td><td>отлично</td><td>средне</td><td>хорошо</td><td>хорошо</td><td>хорошо</td></tr>
+    <tr><td>Удобство подготовки программы</td><td>хорошо</td><td>отлично</td><td>слабо</td><td>средне</td><td>отлично</td><td>средне</td><td>отлично</td></tr>
+    <tr><td>Гибкость раскладки</td><td>средне (2 дока, перенос вкладок)</td><td>высокая (зоны + пресеты)</td><td>низкая (2 шторки)</td><td>средне (аккордеон)</td><td>средне (ящик, до 3 рядом)</td><td>высокая (окна)</td><td>средне (2 вкладки + 3 режима)</td></tr>
+    <tr><td>Сколько работы перенести в Tk до 20 ноября</td><td>мало</td><td>много</td><td>средне</td><td>много</td><td>мало</td><td>много</td><td>мало</td></tr>
+    <tr><td>Риск ошибки оператора в эфире</td><td>низкий</td><td>средний</td><td>самый низкий</td><td>низкий</td><td>низкий (GO)</td><td>средний (окна поверх)</td><td>низкий</td></tr>
+  </table>
+
+  <p class="common">Во всех вариантах одни клавиши: <kbd>Space</kbd> пуск/пауза · <kbd>N</kbd> следующий · <kbd>Shift</kbd>+<kbd>S</kbd> стоп · <kbd>B</kbd> заставка · <kbd>F1</kbd>–<kbd>F6</kbd> панели · <kbd>Q</kbd>–<kbd>Y</kbd> быстрые кнопки. Клик по номеру открывает его в инспекторе. Общие данные: <code>assets/common.js</code>, содержимое панелей: <code>assets/panels.js</code>.</p>
+</main>
+<script>
+  // Масштаб превью под ширину карточки.
+  function fit() { document.querySelectorAll(".thumb").forEach((t) => { t.querySelector("iframe").style.transform = `scale(${t.clientWidth / 1600})`; }); }
+  addEventListener("resize", fit); fit();
+</script>
+</body>
+</html>

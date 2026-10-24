@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FestMon · A · Эфирный пульт</title>
+<link rel="stylesheet" href="assets/panels.css">
+<style>
+/* Палитра 1:1 с panel/theme.py — вариант «эволюция текущей панели». */
+:root {
+  --bg: #16171c; --panel: #1e2027; --panel2: #262932; --field: #101116;
+  --border: #363a45; --border-hi: #4a5060; --text: #e6e8ee; --dim: #8b90a0;
+  --accent: #35e0d2; --accent-dim: #16433e; --accent-fg: #06211e;
+  --ok: #3ddc84; --warn: #ffd54f; --bad: #d6333a; --red-fg: #ff6b6b;
+  --blue: #4da3ff; --run: #2f6fd8; --next-fg: #8fd0ff; --orange: #ff9e3d;
+  --r: 6px;
+  --dockL: 300px; --dockR: 340px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.35 "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+button { font-family: inherit; }
+
+/* ---------- верхняя полоса ---------- */
+.top { height: 56px; display: flex; align-items: center; gap: 18px; padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.logo { font-weight: 800; letter-spacing: .12em; color: var(--accent); }
+.onair { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 4px; font-weight: 800; letter-spacing: .1em; background: var(--field); color: var(--dim); border: 1px solid var(--border); min-width: 132px; justify-content: center; }
+.onair i { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+.onair.live { background: #b4141e; color: #fff; border-color: #ff4a52; box-shadow: 0 0 18px rgba(214,51,58,.55); }
+.onair.live i { animation: blink 1.2s infinite; }
+.onair.paused { background: #3a3114; color: var(--warn); border-color: var(--warn); }
+.onair.standby { background: #142c3a; color: var(--blue); border-color: var(--blue); }
+@keyframes blink { 50% { opacity: .25; } }
+.now { min-width: 0; flex: 1; }
+.now small { color: var(--dim); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.now div { font-size: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.timers { display: flex; gap: 2px; }
+.timer { padding: 4px 14px; border-left: 1px solid var(--border); text-align: right; }
+.timer small { display: block; color: var(--dim); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.timer b { font: 700 22px Consolas, monospace; }
+.timer.rem b { color: var(--run-fg, #ffe082); }
+.timer.rem.low b { color: var(--red-fg); }
+.web { font-size: 12px; color: var(--dim); }
+.web::before { content: "● "; color: var(--ok); }
+.tb { display: flex; gap: 4px; }
+.tb button { background: var(--panel2); border: 1px solid var(--border); color: var(--text); border-radius: var(--r); height: 32px; min-width: 34px; padding: 0 9px; cursor: pointer; }
+.tb button:hover { border-color: var(--border-hi); }
+.tb button.on { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+/* ---------- тело ---------- */
+.body { display: flex; height: calc(100% - 56px); }
+.rail { width: 54px; flex: none; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding: 8px 0; gap: 4px; }
+.rail button { position: relative; width: 42px; height: 42px; border-radius: 8px; border: 0; background: transparent; color: var(--dim); font-size: 19px; cursor: pointer; }
+.rail button:hover { background: var(--panel2); color: var(--text); }
+.rail button.on { color: var(--accent); background: var(--accent-dim); }
+.rail button.on::before { content: ""; position: absolute; left: -6px; top: 9px; bottom: 9px; width: 3px; border-radius: 2px; background: var(--accent); }
+.rail .badge { position: absolute; top: 2px; right: 2px; background: var(--bad); color: #fff; font: 700 10px/16px "Segoe UI"; min-width: 16px; border-radius: 8px; }
+.rail .sep { flex: 1; }
+.rail button[data-tip]:hover::after { content: attr(data-tip); position: absolute; left: 50px; top: 8px; white-space: nowrap; background: #000; color: #fff; font-size: 12px; padding: 4px 8px; border-radius: 4px; z-index: 20; }
+
+.dock { flex: none; background: var(--panel); display: flex; flex-direction: column; min-width: 0; position: relative; transition: width .18s; }
+.dock.left { width: var(--dockL); border-right: 1px solid var(--border); }
+.dock.right { width: var(--dockR); border-left: 1px solid var(--border); }
+.dock.closed { width: 0 !important; border: 0; overflow: hidden; }
+.dock.closed > * { visibility: hidden; }
+.dock .tabs { display: flex; align-items: stretch; border-bottom: 1px solid var(--border); height: 38px; flex: none; }
+.dock .tabs button.tab { background: none; border: 0; color: var(--dim); padding: 0 12px; cursor: pointer; font-weight: 600; font-size: 13px; border-bottom: 2px solid transparent; white-space: nowrap; }
+.dock .tabs button.tab.on { color: var(--text); border-bottom-color: var(--accent); }
+.dock .tabs .sp { flex: 1; }
+.dock .tabs .ic { background: none; border: 0; color: var(--dim); cursor: pointer; width: 30px; font-size: 14px; }
+.dock .tabs .ic:hover { color: var(--text); }
+.dock .content { flex: 1; overflow: auto; padding: 12px; }
+.grip { position: absolute; top: 0; bottom: 0; width: 6px; cursor: col-resize; z-index: 5; }
+.dock.left .grip { right: -3px; } .dock.right .grip { left: -3px; }
+.grip:hover, .grip.drag { background: var(--accent); opacity: .5; }
+
+/* ---------- центр ---------- */
+.center { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.stage { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 236px 1fr; gap: 12px; padding: 12px; }
+.mon { display: flex; flex-direction: column; min-width: 0; }
+.mon-h { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+.mon-h .tag { padding: 2px 7px; border-radius: 3px; background: var(--panel2); color: var(--text); }
+.mon.pgm .tag { background: #b4141e; color: #fff; }
+.mon.pvw .tag { background: #1d7a3d; color: #fff; }
+.mon-h .sp { flex: 1; }
+.screen { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 4px; overflow: hidden; border: 2px solid var(--border); max-height: 100%; }
+.mon.pgm .screen.on { border-color: #d6333a; box-shadow: 0 0 0 1px #d6333a, 0 0 24px rgba(214,51,58,.25); }
+.mon.pvw .screen { border-color: #1d7a3d; }
+.screen img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.screen .ov { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 14px 10px; background: linear-gradient(transparent, rgba(0,0,0,.8)); display: flex; align-items: flex-end; gap: 10px; }
+.screen .ov b { font-size: 20px; }
+.screen .ov span { color: #ccd; }
+.screen .tc { position: absolute; top: 10px; right: 10px; font: 700 15px Consolas, monospace; background: rgba(0,0,0,.65); padding: 2px 8px; border-radius: 3px; }
+.screen .splash { position: absolute; inset: 0; display: none; place-items: center; background: radial-gradient(circle at 30% 30%, #1e5a53, #101116 70%); font-size: 34px; font-weight: 800; letter-spacing: .2em; color: var(--accent); }
+.screen.standby .splash { display: grid; }
+.screen .bar { position: absolute; left: 0; bottom: 0; height: 4px; background: #d6333a; }
+
+.ctrl { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: auto; }
+.tr { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tbtn { position: relative; height: 58px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel2); color: var(--text); font-weight: 800; font-size: 15px; letter-spacing: .04em; cursor: pointer; transition: transform .06s, filter .15s; }
+.tbtn:hover { filter: brightness(1.15); }
+.tbtn:active { transform: translateY(1px) scale(.98); }
+.tbtn kbd { position: absolute; right: 6px; bottom: 4px; font: 600 10px Consolas, monospace; opacity: .6; }
+.tbtn.play { grid-column: 1 / 3; height: 72px; font-size: 20px; background: #1d7a3d; border-color: #3ddc84; color: #fff; }
+.tbtn.play.on { box-shadow: 0 0 0 2px #3ddc84 inset; }
+.tbtn.pause.on { background: #3a3114; border-color: var(--warn); color: var(--warn); }
+.tbtn.stop { background: #3d2026; border-color: #d6333a; color: var(--red-fg); }
+.tbtn.next { grid-column: 1 / 3; background: #142c3a; border-color: var(--blue); color: var(--next-fg); }
+.tbtn.standby.on { background: #142c3a; border-color: var(--blue); color: var(--blue); }
+.mix { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+.fader { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 8px; font-size: 12px; }
+.fader > span { color: var(--dim); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 11px; }
+.fader > b { font: 700 14px Consolas, monospace; }
+.fader input { grid-column: 1 / 3; width: 100%; accent-color: var(--accent); height: 22px; }
+.meter { position: relative; height: 12px; background: var(--field); border-radius: 2px; overflow: hidden; margin: 2px 0 10px; }
+.meter .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(90deg, #2ea043 0 70%, #d9a300 70% 88%, #e5484d 88%); background-size: var(--mw, 200px) 100%; transition: width .08s linear; }
+.meter .peak { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; }
+.meter-l { display: flex; justify-content: space-between; font: 11px Consolas, monospace; color: var(--dim); margin-top: -6px; margin-bottom: 8px; }
+
+/* ---------- таймлайн ---------- */
+.tl { flex: none; height: 240px; border-top: 1px solid var(--border); background: var(--panel); display: flex; flex-direction: column; }
+.tl.min { height: 40px; }
+.tl.min .cards { display: none; }
+.tl-h { height: 40px; display: flex; align-items: center; gap: 12px; padding: 0 12px; flex: none; }
+.tl-h h3 { margin: 0; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.tl-h .sp { flex: 1; }
+.tl-h button { background: var(--panel2); border: 1px solid var(--border); color: var(--text); border-radius: var(--r); padding: 4px 10px; cursor: pointer; font-size: 12px; }
+.cards { flex: 1; display: flex; gap: 10px; padding: 4px 12px 14px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; }
+.card { flex: none; width: 196px; background: var(--panel2); border: 2px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; position: relative; display: flex; flex-direction: column; }
+.card:hover { border-color: var(--border-hi); }
+.card.sel { outline: 2px solid var(--accent); outline-offset: 2px; }
+.card .cv { position: relative; height: 104px; }
+.card .cv img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card .st { position: absolute; top: 6px; left: 6px; font: 800 10px "Segoe UI"; letter-spacing: .08em; padding: 2px 7px; border-radius: 3px; background: rgba(0,0,0,.6); }
+.card .du { position: absolute; bottom: 6px; right: 6px; font: 700 12px Consolas, monospace; background: rgba(0,0,0,.7); padding: 1px 6px; border-radius: 3px; }
+.card .meta { padding: 8px 10px; }
+.card .meta .n { font-size: 11px; color: var(--dim); font-weight: 700; }
+.card .meta .t { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .meta .s { font-size: 12px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .pg { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--run); }
+.card.done { opacity: .5; }
+.card.done .st { color: var(--dim); }
+.card.live { border-color: var(--run); box-shadow: 0 0 0 1px var(--run), 0 6px 22px rgba(47,111,216,.35); width: 230px; }
+.card.live .st { background: var(--run); color: #fff; }
+.card.next { border-color: var(--blue); border-style: dashed; }
+.card.next .st { background: #142c3a; color: var(--next-fg); }
+.card.brk { background: repeating-linear-gradient(135deg, var(--panel2) 0 10px, #2a2d37 10px 20px); }
+.blk { flex: none; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 11px; font-weight: 700; letter-spacing: .12em; color: var(--dim); text-transform: uppercase; border-left: 1px dashed var(--border-hi); padding: 0 6px; }
+.add { flex: none; width: 64px; border: 2px dashed var(--border); border-radius: 8px; background: none; color: var(--dim); font-size: 26px; cursor: pointer; }
+
+/* ---------- справка ---------- */
+.help { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; place-items: center; z-index: 50; }
+.help.on { display: grid; }
+.help > div { background: var(--panel); border: 1px solid var(--border-hi); border-radius: 10px; padding: 18px 24px; min-width: 420px; }
+.help h3 { margin: 0 0 10px; color: var(--accent); }
+.help table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.help td { padding: 5px 0; border-bottom: 1px solid var(--border); }
+.help td:first-child { width: 150px; }
+kbd { font: 600 12px Consolas, monospace; background: var(--field); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; }
+::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; } ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">FESTMON</div>
+  <div class="onair" id="onair"><i></i><span>В ЭФИРЕ</span></div>
+  <div class="now"><small>Сейчас на сцене</small><div id="nowT">—</div></div>
+  <div class="timers">
+    <div class="timer"><small>Прошло</small><b id="tEl">0:00</b></div>
+    <div class="timer rem" id="tRemBox"><small>Осталось</small><b id="tRem">0:00</b></div>
+    <div class="timer"><small>Время</small><b id="clk"></b></div>
+  </div>
+  <div class="web">веб :50011</div>
+  <div class="tb">
+    <button id="bL" title="Левая панель (Ctrl+[)">◧</button>
+    <button id="bR" title="Правая панель (Ctrl+])">◨</button>
+    <button id="bT" title="Таймлайн (Ctrl+T)">▭</button>
+    <button id="bFocus" title="Только эфир (F11)">⛶</button>
+    <button id="bReset" title="Сбросить раскладку">↺</button>
+    <button id="bHelp" title="Горячие клавиши (?)">?</button>
+  </div>
+</header>
+
+<div class="body">
+  <nav class="rail" id="rail"></nav>
+  <aside class="dock left" id="dockL"><div class="tabs"></div><div class="content"></div><div class="grip"></div></aside>
+  <main class="center">
+    <section class="stage">
+      <div class="mon pvw">
+        <div class="mon-h"><span class="tag">PVW</span> Предпросмотр · следующий <span class="sp"></span><span id="pvwDur"></span></div>
+        <div class="screen" id="pvw"><img alt=""><div class="ov"><b></b><span></span></div></div>
+      </div>
+      <div class="ctrl">
+        <div class="tr">
+          <button class="tbtn play" data-tr="play">▶ ПУСК<kbd>Space</kbd></button>
+          <button class="tbtn pause" data-tr="pause">❚❚ ПАУЗА<kbd>P</kbd></button>
+          <button class="tbtn stop" data-tr="stop">■ СТОП<kbd>⇧S</kbd></button>
+          <button class="tbtn next" data-tr="next">⏭ СЛЕДУЮЩИЙ<kbd>N</kbd></button>
+          <button class="tbtn standby" data-tr="standby" style="grid-column:1/3">▣ ЗАСТАВКА<kbd>B</kbd></button>
+        </div>
+        <div class="mix">
+          <div class="fader"><span>Мастер</span><b id="mVal">78%</b><input type="range" id="master" min="0" max="100"></div>
+          <div class="meter" id="meterM"><div class="fill"></div><div class="peak"></div></div>
+          <div class="meter-l"><span>−60</span><span class="db">—</span><span>0</span></div>
+          <div class="fader"><span>Фон</span><b id="bVal">35%</b><input type="range" id="bedVol" min="0" max="100"></div>
+        </div>
+      </div>
+      <div class="mon pgm">
+        <div class="mon-h"><span class="tag">PGM</span> Экран · проектор <span class="sp"></span><span>1920×1080 · 60 fps</span></div>
+        <div class="screen" id="pgm"><img alt=""><div class="splash">FESTMON</div><div class="tc" id="pgmTc"></div><div class="ov"><b></b><span></span></div><div class="bar" id="pgmBar"></div></div>
+      </div>
+    </section>
+    <section class="tl" id="tl">
+      <div class="tl-h"><h3>Программа</h3><span class="p-dim" id="tlSum"></span><span class="sp"></span>
+        <button id="toLive">⌖ К идущему</button><button id="tlMin">▾ Свернуть</button></div>
+      <div class="cards" id="cards"></div>
+    </section>
+  </main>
+  <aside class="dock right" id="dockR"><div class="grip"></div><div class="tabs"></div><div class="content"></div></aside>
+</div>
+
+<div class="help" id="help"><div>
+  <h3>Горячие клавиши</h3>
+  <table>
+    <tr><td><kbd>Space</kbd></td><td>Пуск / пауза</td></tr>
+    <tr><td><kbd>N</kbd></td><td>Следующий номер</td></tr>
+    <tr><td><kbd>Shift</kbd>+<kbd>S</kbd></td><td>Стоп (с Shift — от случайного нажатия)</td></tr>
+    <tr><td><kbd>B</kbd></td><td>Заставка вкл/выкл</td></tr>
+    <tr><td><kbd>F1</kbd>…<kbd>F6</kbd></td><td>Показать/скрыть панель: инспектор, файлы, фон, кнопки, заявки, плагины</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>[</kbd> / <kbd>]</kbd></td><td>Свернуть левую / правую колонку</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>T</kbd></td><td>Свернуть таймлайн</td></tr>
+    <tr><td><kbd>F11</kbd></td><td>Только эфир: скрыть всё второстепенное</td></tr>
+    <tr><td><kbd>Q</kbd>…<kbd>Y</kbd></td><td>Быстрые кнопки</td></tr>
+  </table>
+  <p class="p-dim">Раскладка (какие панели где, ширины) сохраняется сама. Перетащите край колонки, чтобы изменить ширину; ⇄ на вкладке переносит панель в другую колонку.</p>
+</div></div>
+
+<script src="assets/common.js"></script>
+<script src="assets/panels.js"></script>
+<script>
+(function () {
+  const { PROGRAM, PANELS, state, mmss, cover } = FM;
+  const $ = (s) => document.querySelector(s);
+
+  // ---------- раскладка: две колонки-дока с вкладками ----------
+  const DEF = { L: { open: true, tab: "files", ids: ["files", "bed"] }, R: { open: true, tab: "inspector", ids: ["inspector", "quick", "requests", "plugins"] }, wL: 300, wR: 340, tl: true };
+  let lay = FM.store.get("a-layout", null) || JSON.parse(JSON.stringify(DEF));
+  const save = () => FM.store.set("a-layout", lay);
+  const dockOf = (id) => (lay.L.ids.includes(id) ? "L" : "R");
+
+  function renderDock(side) {
+    const d = lay[side], el = $(side === "L" ? "#dockL" : "#dockR");
+    el.classList.toggle("closed", !d.open || !d.ids.length);
+    if (!d.ids.includes(d.tab)) d.tab = d.ids[0];
+    el.querySelector(".tabs").innerHTML =
+      d.ids.map((id) => { const p = PANELS.find((x) => x.id === id);
+        return `<button class="tab ${id === d.tab ? "on" : ""}" data-tab="${id}" title="${p.title} (${p.key})">${p.short}${p.badge ? ` <span class="p-chip">${p.badge}</span>` : ""}</button>`; }).join("") +
+      `<span class="sp"></span><button class="ic" data-move="${side}" title="Перенести вкладку в другую колонку">⇄</button><button class="ic" data-close="${side}" title="Свернуть колонку">✕</button>`;
+    el.querySelector(".content").innerHTML = d.tab ? FM.renderPanel(d.tab) : "";
+  }
+  function renderRail() {
+    $("#rail").innerHTML = PANELS.map((p) => {
+      const s = dockOf(p.id), on = lay[s].open && lay[s].tab === p.id;
+      return `<button class="${on ? "on" : ""}" data-panel="${p.id}" data-tip="${p.title} · ${p.key}">${p.icon}${p.badge ? `<span class="badge">${p.badge}</span>` : ""}</button>`;
+    }).join("") + `<div class="sep"></div><button data-tip="Окно плагинов" data-act="Настройки">⚙</button>`;
+  }
+  function applyLayout() {
+    document.documentElement.style.setProperty("--dockL", lay.wL + "px");
+    document.documentElement.style.setProperty("--dockR", lay.wR + "px");
+    renderDock("L"); renderDock("R"); renderRail();
+    $("#tl").classList.toggle("min", !lay.tl);
+    $("#tlMin").textContent = lay.tl ? "▾ Свернуть" : "▴ Развернуть";
+    $("#bL").classList.toggle("on", lay.L.open); $("#bR").classList.toggle("on", lay.R.open); $("#bT").classList.toggle("on", lay.tl);
+    save();
+  }
+  function togglePanel(id) {
+    const s = dockOf(id), d = lay[s];
+    if (d.open && d.tab === id) d.open = false; else { d.open = true; d.tab = id; }
+    applyLayout();
+  }
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-tab],[data-panel],[data-move],[data-close]");
+    if (!t) return;
+    if (t.dataset.panel) togglePanel(t.dataset.panel);
+    if (t.dataset.tab) { lay[dockOf(t.dataset.tab)].tab = t.dataset.tab; applyLayout(); }
+    if (t.dataset.close) { lay[t.dataset.close].open = false; applyLayout(); }
+    if (t.dataset.move) {
+      const from = lay[t.dataset.move], to = lay[t.dataset.move === "L" ? "R" : "L"], id = from.tab;
+      from.ids = from.ids.filter((x) => x !== id); to.ids.push(id); to.tab = id; to.open = true;
+      applyLayout();
+    }
+  });
+  $("#bL").onclick = () => { lay.L.open = !lay.L.open; applyLayout(); };
+  $("#bR").onclick = () => { lay.R.open = !lay.R.open; applyLayout(); };
+  $("#bT").onclick = $("#tlMin").onclick = () => { lay.tl = !lay.tl; applyLayout(); };
+  $("#bReset").onclick = () => { lay = JSON.parse(JSON.stringify(DEF)); applyLayout(); FM.toast("Раскладка сброшена"); };
+  let focusSaved = null;
+  function focusMode() {
+    if (focusSaved) { lay.L.open = focusSaved.L; lay.R.open = focusSaved.R; lay.tl = focusSaved.tl; focusSaved = null; }
+    else { focusSaved = { L: lay.L.open, R: lay.R.open, tl: lay.tl }; lay.L.open = lay.R.open = false; }
+    $("#bFocus").classList.toggle("on", !!focusSaved); applyLayout();
+  }
+  $("#bFocus").onclick = focusMode;
+  $("#bHelp").onclick = () => $("#help").classList.toggle("on");
+  $("#help").onclick = (e) => { if (e.target.id === "help") $("#help").classList.remove("on"); };
+
+  // перетаскивание ширины колонок
+  document.querySelectorAll(".grip").forEach((g) => {
+    g.addEventListener("pointerdown", (e) => {
+      const left = g.parentElement.id === "dockL", x0 = e.clientX, w0 = left ? lay.wL : lay.wR;
+      g.classList.add("drag"); g.setPointerCapture(e.pointerId);
+      g.onpointermove = (ev) => {
+        const w = Math.max(220, Math.min(560, w0 + (left ? 1 : -1) * (ev.clientX - x0)));
+        if (left) lay.wL = w; else lay.wR = w;
+        document.documentElement.style.setProperty(left ? "--dockL" : "--dockR", w + "px");
+      };
+      g.onpointerup = () => { g.classList.remove("drag"); g.onpointermove = null; save(); };
+    });
+  });
+
+  // ---------- таймлайн ----------
+  function renderCards() {
+    let html = `<div class="blk">Блок 1</div>`;
+    PROGRAM.forEach((p, i) => {
+      if (p.n === "2.1") html += `<div class="blk">Блок 2</div>`;
+      const st = { done: "СЫГРАН", live: "ИДЁТ", next: "ДАЛЕЕ", queued: "" }[p.status];
+      const prog = p.status === "live" ? `<div class="pg" style="width:${(state.elapsed / p.dur) * 100}%"></div>` : "";
+      html += `<div class="card ${p.status} ${p.kind === "break" ? "brk" : ""} ${state.sel === i ? "sel" : ""}" data-i="${i}">
+        <div class="cv"><img src="${cover(p)}" alt="">${st ? `<span class="st">${st}</span>` : ""}<span class="du">${mmss(p.dur)}</span></div>
+        <div class="meta"><div class="n">${p.n} ${p.nom}</div><div class="t">${p.title}</div><div class="s">${p.sub}</div></div>${prog}</div>`;
+    });
+    html += `<button class="add" data-act="Добавить номер">＋</button>`;
+    $("#cards").innerHTML = html;
+    const total = PROGRAM.reduce((a, p) => a + p.dur, 0);
+    $("#tlSum").textContent = `${PROGRAM.length} позиций · ${Math.round(total / 60)} мин · двойной клик — в предпросмотр`;
+  }
+  $("#cards").addEventListener("click", (e) => {
+    const c = e.target.closest(".card"); if (!c) return;
+    state.sel = +c.dataset.i; renderCards();
+    if (dockOf("inspector")) { const s = dockOf("inspector"); lay[s].open = true; lay[s].tab = "inspector"; applyLayout(); }
+  });
+  $("#toLive").onclick = () => { const el = $(".card.live"); FM.reveal(el, $("#cards")); };
+
+  // ---------- эфир ----------
+  document.querySelectorAll("[data-tr]").forEach((b) => (b.onclick = () => FM.transport(b.dataset.tr)));
+  $("#master").value = state.master; $("#bedVol").value = state.bed;
+  $("#master").oninput = (e) => FM.setLevel("master", +e.target.value);
+  $("#bedVol").oninput = (e) => FM.setLevel("bed", +e.target.value);
+  FM.meter($("#meterM"));
+  FM.clock($("#clk"));
+
+  let lastLive = -1;
+  FM.onChange((s) => {
+    const live = PROGRAM[s.liveIdx], nx = PROGRAM[FM.nextIdx()];
+    const oa = $("#onair"), mode = s.standby ? "standby" : !s.playing ? "" : s.paused ? "paused" : "live";
+    oa.className = "onair " + mode;
+    oa.querySelector("span").textContent = { live: "В ЭФИРЕ", paused: "ПАУЗА", standby: "ЗАСТАВКА", "": "СТОП" }[mode];
+    $("#nowT").textContent = live ? `${live.n} ${live.nom} · ${live.title} — ${live.sub}` : "—";
+    $("#tEl").textContent = mmss(s.elapsed);
+    const rem = live ? live.dur - s.elapsed : 0;
+    $("#tRem").textContent = "−" + mmss(rem);
+    $("#tRemBox").classList.toggle("low", rem <= 30);
+    $("#mVal").textContent = s.master + "%"; $("#bVal").textContent = s.bed + "%";
+    document.querySelector(".tbtn.play").classList.toggle("on", s.playing && !s.paused);
+    document.querySelector(".tbtn.pause").classList.toggle("on", s.paused);
+    document.querySelector(".tbtn.standby").classList.toggle("on", s.standby);
+    const pg = $("#pgm");
+    pg.classList.toggle("on", s.playing && !s.standby); pg.classList.toggle("standby", s.standby);
+    pg.querySelector("img").src = live ? cover(live) : "";
+    pg.querySelector(".ov b").textContent = live ? live.title : ""; pg.querySelector(".ov span").textContent = live ? live.sub : "";
+    $("#pgmTc").textContent = mmss(s.elapsed) + " / " + mmss(live ? live.dur : 0);
+    $("#pgmBar").style.width = live ? (s.elapsed / live.dur) * 100 + "%" : "0";
+    const pv = $("#pvw");
+    pv.querySelector("img").src = nx ? cover(nx) : "";
+    pv.querySelector(".ov b").textContent = nx ? `${nx.n} ${nx.title}` : "Конец программы"; pv.querySelector(".ov span").textContent = nx ? nx.sub : "";
+    $("#pvwDur").textContent = nx ? mmss(nx.dur) : "";
+    if (lastLive !== s.liveIdx) { lastLive = s.liveIdx; renderCards(); requestAnimationFrame(() => $("#toLive").click()); }
+    else { const bar = document.querySelector(".card.live .pg"); if (bar && live) bar.style.width = (s.elapsed / live.dur) * 100 + "%"; }
+  });
+
+  // ---------- клавиши ----------
+  const keys = {
+    Space: () => FM.transport(state.playing && !state.paused ? "pause" : "play"),
+    KeyP: () => FM.transport("pause"), KeyN: () => FM.transport("next"), "shift+KeyS": () => FM.transport("stop"), KeyB: () => FM.transport("standby"),
+    "ctrl+BracketLeft": () => $("#bL").click(), "ctrl+BracketRight": () => $("#bR").click(), "ctrl+KeyT": () => $("#bT").click(),
+    F11: focusMode, "shift+Slash": () => $("#help").classList.toggle("on"), Escape: () => $("#help").classList.remove("on"),
+  };
+  PANELS.forEach((p) => (keys[p.key] = () => togglePanel(p.id)));
+  FM.QUICK.forEach((q) => (keys["Key" + q.key] = () => FM.toast(q.icon + " " + q.label + " — только макет")));
+  FM.hotkeys(keys);
+
+  applyLayout();
+})();
+</script>
+</body>
+</html>

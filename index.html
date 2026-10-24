@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FestMon · выбор дизайна панели</title>
+<meta name="description" content="Семь интерактивных макетов панели оператора FestMon и голосование за лучший.">
+<style>
+:root { --bg: #0f1014; --bar: #17181e; --card: #1c1e25; --card2: #252831; --border: #2f323c; --text: #eceef3; --dim: #969bab; --accent: #35e0d2; --accent-fg: #052522; --ok: #3ddc84; --bad: #ff6b6b; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 15px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif; }
+body { display: flex; flex-direction: column; overflow: hidden; }
+button { font: inherit; color: inherit; }
+a { color: var(--accent); }
+
+/* ---------- верхняя полоса ---------- */
+.bar { flex: none; display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bar); border-bottom: 1px solid var(--border); }
+.brand { font-weight: 800; letter-spacing: .08em; white-space: nowrap; }
+.brand span { color: var(--accent); }
+.nav { display: flex; gap: 4px; overflow-x: auto; flex: 1; min-width: 0; scrollbar-width: none; }
+.nav::-webkit-scrollbar { display: none; }
+.nav button { flex: none; height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 7px; }
+.nav button b { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 5px; background: var(--card2); font-size: 12px; }
+.nav button:hover { border-color: #4a4f5d; }
+.nav button.on { border-color: var(--accent); background: #12302d; }
+.nav button.on b { background: var(--accent); color: var(--accent-fg); }
+.nav button.vote { border-color: #6b5a1a; color: #ffd76a; }
+.nav button.vote.on { background: #3a3114; border-color: #ffd76a; }
+.arrows { display: flex; gap: 4px; }
+.arrows button, .ib { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); cursor: pointer; }
+.arrows button:hover, .ib:hover { border-color: #4a4f5d; }
+.ib.on { border-color: var(--accent); color: var(--accent); }
+.count { color: var(--dim); font-size: 13px; white-space: nowrap; }
+
+/* ---------- слайды ---------- */
+.stage { flex: 1; min-height: 0; position: relative; }
+.slide { position: absolute; inset: 0; display: none; }
+.slide.on { display: flex; }
+
+/* интро и голосование — обычные прокручиваемые страницы */
+.page { overflow: auto; width: 100%; }
+.inner { max-width: 1180px; margin: 0 auto; padding: 36px 20px 60px; }
+.hero h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.15; margin: 0 0 10px; }
+.hero h1 span { color: var(--accent); }
+.hero p { color: var(--dim); max-width: 760px; margin: 0 0 8px; font-size: 16px; }
+.how { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 22px 0 30px; }
+.how div { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.how b { display: block; margin-bottom: 4px; }
+.how span { color: var(--dim); font-size: 14px; }
+.groups h2 { font-size: 18px; margin: 26px 0 4px; }
+.groups > p { color: var(--dim); margin: 0 0 12px; font-size: 14px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.tile { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; cursor: pointer; text-align: left; padding: 0; transition: transform .12s, border-color .12s; }
+.tile:hover { transform: translateY(-2px); border-color: var(--accent); }
+.tile .th { position: relative; aspect-ratio: 16/9; overflow: hidden; background: #000; }
+.tile .th iframe { position: absolute; left: 0; top: 0; width: 1600px; height: 900px; border: 0; transform-origin: 0 0; pointer-events: none; }
+.tile .tx { padding: 10px 14px 12px; }
+.tile .tx b { font-size: 16px; }
+.tile .tx b i { font-style: normal; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: var(--accent); color: var(--accent-fg); font-size: 12px; margin-right: 8px; }
+.tile .tx span { display: block; color: var(--dim); font-size: 13px; margin-top: 3px; }
+.cta { margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); cursor: pointer; text-decoration: none; color: var(--text); font-weight: 600; }
+.btn.pri { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+/* слайд дизайна: макет + справка */
+.design { width: 100%; }
+.view { flex: 1; min-width: 0; position: relative; background: #000; overflow: hidden; }
+.view iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #16171c; }
+.view .scaled { position: absolute; right: 10px; bottom: 10px; z-index: 2; background: rgba(0,0,0,.75); color: var(--dim); font-size: 12px; padding: 4px 10px; border-radius: 6px; pointer-events: none; }
+.info { flex: none; width: 340px; background: var(--bar); border-left: 1px solid var(--border); overflow: auto; padding: 18px; transition: margin-right .2s; }
+body.noinfo .info { margin-right: -340px; }
+.info h2 { margin: 0 0 4px; font-size: 21px; display: flex; gap: 10px; align-items: center; }
+.info h2 i { font-style: normal; display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--accent-fg); font-size: 15px; }
+.info .tag { display: inline-block; font-size: 12px; color: var(--dim); border: 1px solid var(--border); border-radius: 99px; padding: 1px 9px; margin-bottom: 10px; }
+.info p { color: #c8ccd6; margin: 0 0 12px; font-size: 14px; }
+.info h4 { margin: 14px 0 4px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.info h4.p { color: var(--ok); } .info h4.m { color: var(--bad); } .info h4.t { color: var(--accent); }
+.info ul { margin: 0; padding-left: 18px; font-size: 14px; }
+.info li { margin: 3px 0; }
+.info kbd { font: 600 12px Consolas, monospace; background: var(--card2); border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; }
+.info .open { margin-top: 16px; font-size: 13px; }
+
+/* голосование */
+.vote-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 14px 0 24px; }
+.vote-list button { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; cursor: pointer; text-align: left; }
+.vote-list button:hover { border-color: var(--accent); }
+.vote-list b { display: block; }
+.vote-list span { color: var(--dim); font-size: 12px; }
+.formbox { background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); }
+.formbox iframe { width: 100%; height: 760px; border: 0; display: block; }
+.formnote { color: var(--dim); font-size: 13px; margin-top: 10px; }
+
+@media (max-width: 900px) {
+  .info { position: absolute; right: 0; top: 0; bottom: 0; z-index: 5; width: min(340px, 88vw); box-shadow: -20px 0 40px rgba(0,0,0,.5); }
+  body.noinfo .info { margin-right: calc(-1 * min(340px, 88vw)); }
+  .brand { display: none; }
+  .count { display: none; }
+}
+</style>
+</head>
+<body class="noinfo">
+<header class="bar">
+  <div class="brand">FEST<span>MON</span></div>
+  <nav class="nav" id="nav"></nav>
+  <span class="count" id="count"></span>
+  <button class="ib" id="infoBtn" title="Описание варианта (I)">ℹ</button>
+  <div class="arrows"><button id="prev" title="Назад (PageUp)">‹</button><button id="next" title="Дальше (PageDown)">›</button></div>
+</header>
+<main class="stage" id="stage">
+  <section class="slide page" id="s-intro"><div class="inner">
+    <div class="hero">
+      <h1>Панель оператора <span>FestMon</span>: выберите дизайн</h1>
+      <p>FestMon ведёт программу фестиваля: оператор запускает номера, выводит видео и картинки на проектор и управляет звуком. Здесь 7 вариантов того, как может выглядеть его пульт.</p>
+      <p>Это интерактивные макеты: всё нажимается и переключается, но данные фейковые и ничего по-настоящему не запускается.</p>
+    </div>
+    <div class="how">
+      <div><b>① Пролистайте варианты</b><span>Кнопки A–G сверху или стрелки ‹ ›. Удобнее всего на компьютере, на телефоне макет уменьшится.</span></div>
+      <div><b>② Потрогайте</b><span>Нажимайте «Пуск», «Следующий», открывайте и прячьте панели. Подсказки — по кнопке ℹ.</span></div>
+      <div><b>③ Проголосуйте</b><span>Последний слайд — короткая форма: что понравилось больше и почему.</span></div>
+    </div>
+    <div class="groups" id="groups"></div>
+    <div class="cta"><button class="btn pri" data-go="1">Начать с варианта A →</button><button class="btn" data-go="vote">Сразу к голосованию</button></div>
+  </div></section>
+
+  <section class="slide design" id="s-design">
+    <div class="view" id="view"><iframe id="frame" title="Макет"></iframe><div class="scaled" id="scaled"></div></div>
+    <aside class="info" id="info"></aside>
+  </section>
+
+  <section class="slide page" id="s-vote"><div class="inner">
+    <div class="hero">
+      <h1>Какой вариант <span>лучше</span>?</h1>
+      <p>Выберите любимый (можно назвать и второй), напишите, что понравилось и что мешает. Это займёт пару минут.</p>
+    </div>
+    <div class="vote-list" id="voteList"></div>
+    <div class="formbox"><iframe id="form" title="Форма голосования" loading="lazy"></iframe></div>
+    <p class="formnote">Форма не загрузилась? <a id="formLink" target="_blank" rel="noopener">Открыть её в новой вкладке</a>.</p>
+  </div></section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  const FORM = "https://forms.yandex.ru/u/6adce23549af472adc264928/";
+  const D = [
+    { k: "A", f: "a_console.html", t: "Эфирный пульт", g: 1, short: "Как сейчас, но аккуратнее: предпросмотр → кнопки → экран",
+      d: "Развитие текущей панели. Предпросмотр, кнопки и экран проектора стоят в ряд, как на видеомикшере; лента номеров снизу; по бокам две колонки с вкладками.",
+      h: "Иконки на левой полосе, <kbd>F1</kbd>–<kbd>F6</kbd>, <kbd>Ctrl</kbd>+<kbd>[</kbd>/<kbd>]</kbd> сворачивают колонки, края колонок тянутся, ⇄ переносит вкладку, <kbd>F11</kbd> — только эфир.",
+      p: ["Почти не надо переучиваться", "Всё эфирное видно сразу", "Проще всего сделать в настоящей программе"], m: ["Самый плотный, на маленьком экране тесно", "Выглядит «как сейчас»"] },
+    { k: "B", f: "b_dock_grid.html", t: "Докируемая сетка", g: 1, short: "Панели перетаскиваются, есть готовые раскладки",
+      d: "Слева список программы со временем старта, в центре экраны и кнопки. Любую панель можно перетащить за заголовок влево, вправо или вниз.",
+      h: "Перетаскивание за ⋮⋮, ▾ сворачивает, ✕ убирает в «лоток» сверху, меню «Вид», раскладки «Подготовка / Эфир / Звук / Моя» — <kbd>Alt</kbd>+<kbd>1</kbd>…<kbd>4</kbd>.",
+      p: ["Самый гибкий", "Подготовка и эфир — разные раскладки одной клавишей"], m: ["Раскладку легко «сломать» перед эфиром", "Сложнее всего сделать по-настоящему"] },
+    { k: "C", f: "c_focus.html", t: "Только эфир", g: 1, short: "Огромные цифры и кнопки, остальное выезжает с краёв",
+      d: "Чёрный фон и крупный текст: «Сейчас» с большим обратным отсчётом, «Далее» с предпросмотром, огромные кнопки. Всё остальное спрятано в выезжающих панелях.",
+      h: "Ярлыки по краям экрана, <kbd>F1</kbd>–<kbd>F6</kbd>, <kbd>Esc</kbd> закрывает, 📌 закрепляет панель рядом, <kbd>Ctrl</kbd>+<kbd>K</kbd> — поиск команд.",
+      p: ["Лучше всего читается в тёмном зале", "Трудно промахнуться под стрессом"], m: ["Неудобно готовить программу", "Незакреплённые панели закрывают экран"] },
+    { k: "D", f: "d_aurora.html", t: "Аврора", g: 1, short: "Фиолетовый, градиенты, круглые кнопки",
+      d: "Самый «праздничный»: тёмно-фиолетовый фон, градиенты, скругления, круглые кнопки эфира, кольцо прогресса у идущего номера, справа карточки-аккордеоны.",
+      h: "Карточки справа раскрываются по клику или <kbd>F1</kbd>–<kbd>F6</kbd>, кнопка «панели» — какие карточки показывать, <kbd>Ctrl</kbd>+<kbd>\\</kbd> прячет колонку.",
+      p: ["Самый красивый и фестивальный", "Крупная карточка «Сейчас»"], m: ["Контраст ниже — в тёмном зале хуже", "Сложно повторить в настоящей программе"] },
+    { k: "E", f: "e_cuelist.html", t: "Сценарий", g: 2, short: "Программа списком в центре и большая кнопка GO",
+      d: "Главное — программа: список по центру, как сценарий. Идущий номер раскрыт крупно, сверху большая кнопка GO с названием следующего. Экраны и микшер — узкой колонкой справа.",
+      h: "Нижний ящик с вкладками: клик открывает, <kbd>Ctrl</kbd>+клик ставит до трёх рядом, край тянется, <kbd>`</kbd> сворачивает.",
+      p: ["Видна вся программа и время каждого номера", "Одна главная кнопка — трудно ошибиться"], m: ["Экраны маленькие", "Похоже на таблицу"] },
+    { k: "F", f: "f_lanes.html", t: "Дорожки и окна", g: 2, short: "Большие экраны, номера на шкале времени, плавающие окна",
+      d: "Как программа монтажа: два больших экрана, под ними кнопки, снизу дорожки по времени (ширина номера = длительность). Панели — плавающие окна.",
+      h: "Окна таскаются и растягиваются, сворачиваются в полосу внизу; «Разложить», «Свернуть все», удерживайте <kbd>Alt</kbd>, чтобы заглянуть под окна.",
+      p: ["Самые крупные экраны", "Видно, где антракт и сколько до конца блока"], m: ["Окна перекрывают экраны", "Неудобно переставлять номера"] },
+    { k: "G", f: "g_split.html", t: "Эфир | Подготовка", g: 2, short: "Слева то, что видит зал, справа рабочий стол",
+      d: "Экран поделён пополам: слева только эфир (проектор, отсчёт, кнопки, звук), справа подготовка (предпросмотр и вкладки: программа карточками, инспектор, файлы…).",
+      h: "Вкладки справа, <kbd>Shift</kbd>+клик — вторая вкладка снизу, разделитель тянется, режимы <kbd>Ctrl</kbd>+<kbd>←</kbd> только эфир / <kbd>Ctrl</kbd>+<kbd>→</kbd> подготовка.",
+      p: ["Чёткая граница «в эфире» / «готовлю»", "Перед эфиром убрать лишнее — одна клавиша"], m: ["В режиме «поровну» тесновато", "Предпросмотр далеко от экрана эфира"] },
+  ];
+  const SLIDES = ["intro", ...D.map((d) => d.k.toLowerCase()), "vote"];
+  let cur = 0;
+  const $ = (s) => document.querySelector(s);
+
+  // ---------- навигация ----------
+  $("#nav").innerHTML = `<button data-go="0">Начало</button>` +
+    D.map((d, i) => `<button data-go="${i + 1}" title="${d.t}"><b>${d.k}</b>${d.t}</button>`).join("") +
+    `<button class="vote" data-go="vote">🗳 Голосование</button>`;
+  const tiles = (g) => D.filter((d) => d.g === g).map((d) => `<button class="tile" data-go="${D.indexOf(d) + 1}">
+      <div class="th"><iframe src="${d.f}" loading="lazy" tabindex="-1" title="${d.t}"></iframe></div>
+      <div class="tx"><b><i>${d.k}</i>${d.t}</b><span>${d.short}</span></div></button>`).join("");
+  $("#groups").innerHTML = `<h2>Разный стиль</h2><p>Различаются цветом и характером.</p><div class="tiles">${tiles(1)}</div>
+    <h2>Разное расположение</h2><p>Один цвет — сравниваются только расположение и способ прятать панели.</p><div class="tiles">${tiles(2)}</div>`;
+  $("#voteList").innerHTML = D.map((d, i) => `<button data-go="${i + 1}"><b>${d.k} · ${d.t}</b><span>посмотреть ещё раз</span></button>`).join("");
+
+  function go(i) {
+    if (i === "vote") i = SLIDES.length - 1;
+    i = Math.max(0, Math.min(SLIDES.length - 1, +i));
+    cur = i;
+    const name = SLIDES[i];
+    document.querySelectorAll(".slide").forEach((s) => s.classList.remove("on"));
+    document.querySelectorAll("#nav [data-go]").forEach((b, j) => b.classList.toggle("on", j === i));
+    const active = document.querySelectorAll("#nav [data-go]")[i];
+    if (active) active.scrollIntoView({ inline: "nearest", block: "nearest" });
+    if (name === "intro") $("#s-intro").classList.add("on");
+    else if (name === "vote") {
+      $("#s-vote").classList.add("on");
+      if (!$("#form").src) { $("#form").src = FORM + "?iframe=1"; $("#formLink").href = FORM; }
+    } else {
+      const d = D[i - 1];
+      $("#s-design").classList.add("on");
+      if (!$("#frame").src.endsWith(d.f)) $("#frame").src = d.f;
+      $("#info").innerHTML = `<h2><i>${d.k}</i>${d.t}</h2><span class="tag">${d.g === 1 ? "разный стиль" : "разное расположение"}</span>
+        <p>${d.d}</p><h4 class="t">Как прятать панели</h4><p>${d.h}</p>
+        <h4 class="p">Плюсы</h4><ul>${d.p.map((x) => `<li>${x}</li>`).join("")}</ul>
+        <h4 class="m">Минусы</h4><ul>${d.m.map((x) => `<li>${x}</li>`).join("")}</ul>
+        <h4 class="t">Везде одинаково</h4><p><kbd>Space</kbd> пуск/пауза · <kbd>N</kbd> следующий · <kbd>B</kbd> заставка · <kbd>Shift</kbd>+<kbd>S</kbd> стоп. Сначала кликните по макету.</p>
+        <p class="open"><a href="${d.f}" target="_blank" rel="noopener">Открыть макет на весь экран ↗</a></p>`;
+      fit();
+    }
+    $("#count").textContent = i === 0 ? "" : i === SLIDES.length - 1 ? "голосование" : `${i} / ${D.length}`;
+    $("#prev").disabled = i === 0; $("#next").disabled = i === SLIDES.length - 1;
+    if (location.hash.slice(1) !== name) history.replaceState(null, "", "#" + name);
+  }
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) go(b.dataset.go); });
+  $("#prev").onclick = () => go(cur - 1);
+  $("#next").onclick = () => go(cur + 1);
+  $("#infoBtn").onclick = () => { document.body.classList.toggle("noinfo"); $("#infoBtn").classList.toggle("on"); setTimeout(fit, 220); };
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest && e.target.closest("input,textarea")) return;
+    if (e.key === "PageDown" || e.key === "ArrowRight") go(cur + 1);
+    if (e.key === "PageUp" || e.key === "ArrowLeft") go(cur - 1);
+    if (e.key === "i" || e.key === "ш") $("#infoBtn").click();
+  });
+  addEventListener("hashchange", () => { const j = SLIDES.indexOf(location.hash.slice(1)); if (j >= 0 && j !== cur) go(j); });
+
+  // ---------- масштаб макета ----------
+  // Макеты рассчитаны на широкий экран. Если места меньше 1280×700 — рисуем
+  // макет в 1600×900 и уменьшаем, чтобы на ноутбуке и телефоне он был целиком.
+  function fit() {
+    const v = $("#view"), f = $("#frame"), w = v.clientWidth, h = v.clientHeight;
+    if (w >= 1280 && h >= 700) { Object.assign(f.style, { width: w + "px", height: h + "px", transform: "none" }); $("#scaled").textContent = ""; }
+    else {
+      const s = Math.min(w / 1600, h / 900);
+      Object.assign(f.style, { width: 1600 + "px", height: 900 + "px", transform: `translate(${(w - 1600 * s) / 2}px, ${(h - 900 * s) / 2}px) scale(${s})` });
+      $("#scaled").textContent = `уменьшено до ${Math.round(s * 100)}% — экран меньше макета`;
+    }
+    document.querySelectorAll(".tile .th").forEach((t) => (t.querySelector("iframe").style.transform = `scale(${t.clientWidth / 1600})`));
+  }
+  addEventListener("resize", fit);
+  if (innerWidth > 1300) { document.body.classList.remove("noinfo"); $("#infoBtn").classList.add("on"); }
+  const start = SLIDES.indexOf(location.hash.slice(1));
+  go(start >= 0 ? start : 0);
+  fit();
+})();
+</script>
+</body>
+</html>

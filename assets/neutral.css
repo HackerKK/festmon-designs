@@ -1,0 +1,61 @@
+/* Общая нейтральная тема для E/F/G: цвет одинаковый намеренно,
+ * чтобы варианты сравнивались только по расположению. Палитра — panel/theme.py. */
+:root {
+  --bg: #16171c; --panel: #1e2027; --panel2: #262932; --field: #101116;
+  --border: #363a45; --border-hi: #4a5060; --text: #e6e8ee; --dim: #8b90a0;
+  --accent: #35e0d2; --accent-dim: #16433e; --accent-fg: #06211e;
+  --ok: #3ddc84; --warn: #ffd54f; --bad: #d6333a; --red-fg: #ff6b6b;
+  --blue: #4da3ff; --run: #2f6fd8; --next-fg: #8fd0ff; --live: #e5333d;
+  --r: 6px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.35 "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+button { font-family: inherit; color: inherit; }
+kbd { font: 600 10px Consolas, monospace; color: var(--dim); border: 1px solid var(--border); border-radius: 3px; padding: 0 4px; }
+.mono { font-family: Consolas, monospace; }
+.dim { color: var(--dim); }
+.btn { background: var(--panel2); border: 1px solid var(--border); border-radius: var(--r); padding: 5px 10px; cursor: pointer; font-size: 13px; }
+.btn:hover { border-color: var(--border-hi); }
+.btn.on { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+/* лампа эфира */
+.lamp { display: inline-flex; align-items: center; gap: 7px; padding: 4px 12px; border-radius: 4px; font-weight: 800; letter-spacing: .1em; font-size: 12px; background: var(--field); color: var(--dim); border: 1px solid var(--border); }
+.lamp.live { background: #b4141e; color: #fff; border-color: #ff4a52; }
+.lamp.paused { background: #3a3114; color: var(--warn); border-color: var(--warn); }
+.lamp.standby { background: #142c3a; color: var(--blue); border-color: var(--blue); }
+
+/* кнопки транспорта */
+.tk { position: relative; border-radius: 8px; border: 1px solid var(--border); background: var(--panel2); font-weight: 800; letter-spacing: .04em; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.tk:hover { filter: brightness(1.15); }
+.tk:active { transform: scale(.97); }
+.tk kbd { position: absolute; top: 3px; right: 4px; border: 0; }
+.tk.play { background: #1d7a3d; border-color: var(--ok); color: #fff; }
+.tk.play.on { box-shadow: 0 0 0 2px var(--ok) inset; }
+.tk.pause.on { background: #3a3114; border-color: var(--warn); color: var(--warn); }
+.tk.stop { background: #3d2026; border-color: var(--bad); color: var(--red-fg); }
+.tk.next { background: #142c3a; border-color: var(--blue); color: var(--next-fg); }
+.tk.standby.on { background: #142c3a; border-color: var(--blue); color: var(--blue); }
+
+/* экран-монитор */
+.scr { position: relative; background: #000; border: 2px solid var(--border); border-radius: 4px; overflow: hidden; }
+.scr img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scr .tag { position: absolute; top: 6px; left: 6px; font: 800 10px "Segoe UI"; letter-spacing: .08em; padding: 2px 6px; border-radius: 3px; color: #fff; }
+.scr.pgm .tag { background: #b4141e; } .scr.pvw .tag { background: #1d7a3d; }
+.scr.pgm.on { border-color: var(--live); }
+.scr.pvw { border-color: #1d7a3d; }
+.scr .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 10px 6px; background: linear-gradient(transparent, rgba(0,0,0,.85)); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scr .tc { position: absolute; top: 6px; right: 6px; font: 700 12px Consolas, monospace; background: rgba(0,0,0,.65); padding: 1px 6px; border-radius: 3px; }
+.scr .sb { position: absolute; inset: 0; display: none; place-items: center; background: radial-gradient(circle at 30% 30%, #1e5a53, #101116 70%); font-weight: 800; letter-spacing: .2em; color: var(--accent); font-size: 22px; }
+.scr.standby .sb { display: grid; }
+
+/* метр (горизонтальный и вертикальный) */
+.meter { position: relative; height: 10px; background: var(--field); border-radius: 2px; overflow: hidden; }
+.meter .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #2ea043 0 68%, #d9a300 80%, #e5484d 94%); transition: width .08s; }
+.meter .peak { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; }
+.meter .db { display: none; }
+.meter.v { width: 14px; height: auto; }
+.meter.v .fill { inset: auto 0 0 0; width: auto; height: 0; background: linear-gradient(0deg, #2ea043 0 68%, #d9a300 80%, #e5484d 94%); transition: height .08s; }
+.meter.v .peak { left: 0; right: 0; width: auto; height: 2px; top: auto; }
+
+input[type=range] { accent-color: var(--accent); }
+::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; } ::-webkit-scrollbar-track { background: transparent; }
