@@ -41,12 +41,38 @@
 .cr.live .t { font-size: 22px; }
 .cr.live .st { color: #fff; background: var(--run); padding: 3px 8px; border-radius: 3px; justify-self: start; }
 .cr.live .bigrem { font: 700 28px Consolas, monospace; }
-.cr.live .pb { position: absolute; left: 16px; right: 16px; bottom: 8px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
+.cr.live .pb { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; margin-bottom: 4px; }
 .cr.live .pb i { display: block; height: 100%; background: var(--run); }
 .cr.next { box-shadow: inset 4px 0 0 var(--blue); background: rgba(77,163,255,.06); }
 .cr.next .st { color: var(--next-fg); }
 .cr.sel { outline: 2px solid var(--accent); outline-offset: -2px; }
 .cr.brk .t { font-style: italic; color: var(--dim); }
+/* реквизиты: значки в строке, развёрнутый блок у идущего и следующего */
+.rq { display: flex; gap: 6px; margin-top: 3px; }
+.rq span { font-size: 11px; color: var(--dim); background: var(--panel2); border-radius: 3px; padding: 0 6px; white-space: nowrap; }
+.rq span.w { color: var(--warn); }
+.req3 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 8px; padding: 2px 0 12px 46px; cursor: default; }
+.req3 > div { background: rgba(0,0,0,.25); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 13px; min-width: 0; }
+.req3 h6 { margin: 0 0 3px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+.req3 .lt { color: #ffe9a8; }
+.req3 label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.req3 label.ok { color: var(--dim); text-decoration: line-through; }
+.req3 .w { color: var(--warn); }
+.req3 .none { color: var(--dim); font-style: italic; }
+.cr.next .req3 > div { border-color: rgba(77,163,255,.45); }
+.req3 .prep { grid-column: 1 / -1; font-size: 11px; color: var(--next-fg); letter-spacing: .06em; font-weight: 700; text-transform: uppercase; margin-bottom: -2px; }
+.go .reqline { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; font-size: 13px; color: #c8ccd6; }
+.go .reqline b { font-size: 13px; color: var(--text); }
+.go .reqline .w { color: var(--warn); }
+/* вкладка «Реквизиты» в ящике */
+.rf { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.rf h6 { margin: 0 0 6px; font-size: 11px; letter-spacing: .08em; color: var(--dim); text-transform: uppercase; }
+.rf textarea { min-height: 70px; }
+.rf .pl label { display: flex; gap: 8px; align-items: center; padding: 3px 0; font-size: 13px; }
+.rf .pl label.ok span { color: var(--dim); text-decoration: line-through; }
+.rf .add { display: flex; gap: 6px; margin-top: 6px; }
+.rf .add input { flex: 1; background: var(--field); border: 1px solid var(--border); color: var(--text); border-radius: var(--r); padding: 5px 8px; font: inherit; font-size: 13px; }
+.rf .who { font-size: 12px; color: var(--dim); margin-top: 6px; }
 .blk { padding: 10px 16px 4px; font-size: 11px; font-weight: 800; letter-spacing: .12em; color: var(--accent); text-transform: uppercase; background: var(--bg); position: sticky; top: 0; z-index: 1; }
 
 /* ---------- правая колонка: экраны + микшер ---------- */
@@ -64,6 +90,16 @@
 .strip .row { height: 170px; display: flex; gap: 6px; align-items: stretch; }
 .strip input[type=range] { writing-mode: vertical-lr; direction: rtl; width: 30px; height: 170px; }
 .strip .meter.v { width: 10px; }
+.remain { background: var(--field); border-radius: 8px; padding: 10px 14px; flex: none; }
+.remain .rh { display: flex; align-items: baseline; justify-content: space-between; }
+.remain .rh span { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--dim); }
+.remain .rh b { font: 700 40px/1 Consolas, monospace; color: #ffe082; }
+.remain.low .rh b { color: var(--red-fg); }
+.remain .rb { height: 8px; border-radius: 4px; background: var(--panel2); overflow: hidden; margin: 8px 0 6px; }
+.remain .rb i { display: block; height: 100%; background: var(--run); transition: width 1s linear; }
+.remain.low .rb i { background: var(--live); }
+.remain .rf2 { display: flex; justify-content: space-between; font-size: 12px; color: var(--dim); }
+.remain .rf2 b { font: 700 13px Consolas, monospace; color: var(--text); }
 
 /* ---------- нижний ящик ---------- */
 .drawer { grid-column: 1; background: var(--panel); border-top: 1px solid var(--border); display: flex; flex-direction: column; height: var(--drawerH); position: relative; }
@@ -88,7 +124,7 @@
   <section class="cue">
     <div class="go">
       <button class="tk next" data-tr="next">GO ⏭<small>следующий номер</small><kbd>N</kbd></button>
-      <div class="what"><small>Пойдёт по GO</small><b id="goT"></b><span id="goS"></span></div>
+      <div class="what"><small>Пойдёт по GO</small><b id="goT"></b><span id="goS"></span><div class="reqline" id="goReq"></div></div>
       <div class="side"><span class="lamp" id="lamp">В ЭФИРЕ</span><div id="clk"></div></div>
     </div>
     <div class="cols"><span>#</span><span>обложка</span><span>номер</span><span>номинация</span><span>длит.</span><span>старт</span><span>статус</span></div>
@@ -109,7 +145,11 @@
     <div class="mixer">
       <div class="strip">МАСТЕР<div class="row"><input type="range" id="master" min="0" max="100"><div class="meter v" id="mL"><div class="fill"></div><div class="peak"></div></div><div class="meter v" id="mR"><div class="fill"></div><div class="peak"></div></div></div><b id="mV"></b></div>
       <div class="strip">ФОН<div class="row"><input type="range" id="bed" min="0" max="100"></div><b id="bV"></b></div>
-      <div class="strip">ОСТАЛОСЬ<div class="row" style="align-items:center"><b id="rem" style="font-size:22px;writing-mode:vertical-lr;transform:rotate(180deg)"></b></div><b id="el"></b></div>
+    </div>
+    <div class="remain" id="remBox">
+      <div class="rh"><span>ОСТАЛОСЬ</span><b id="rem"></b></div>
+      <div class="rb"><i id="remBar"></i></div>
+      <div class="rf2"><span>прошло <b id="el"></b></span><span>длительность <b id="durL"></b></span></div>
     </div>
   </aside>
 
@@ -127,16 +167,64 @@
   const { PROGRAM, PANELS, state, mmss, cover } = FM;
   const $ = (s) => document.querySelector(s);
 
+  // ---------- реквизиты номера ----------
+  // Отметки «вынесено на сцену» — только в браузере, как и всё в макете.
+  let done = FM.store.get("e-props-done", {});
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  const propKey = (p, k) => p.n + "|" + k;
+  function chips(p) {
+    const r = p.req; if (!r) return "";
+    return `<div class="rq">${r.light ? `<span title="${esc(r.light)}">💡 свет</span>` : ""}${r.props.length ? `<span title="${esc(r.props.join(", "))}">📦 ${r.props.length}</span>` : ""}${r.wish ? `<span class="w" title="${esc(r.wish)}">⚠ пожелание</span>` : ""}</div>`;
+  }
+  function req3(p, next) {
+    const r = p.req; if (!r) return "";
+    const props = r.props.length ? r.props.map((x, k) => { const ok = done[propKey(p, k)];
+      return `<label class="${ok ? "ok" : ""}"><input type="checkbox" data-prop="${p.n}|${k}" ${ok ? "checked" : ""}>${esc(x)}</label>`; }).join("") : `<span class="none">ничего</span>`;
+    return `<div class="req3">${next ? `<div class="prep" style="background:none;border:0;padding:0">Подготовить до GO</div>` : ""}
+      <div><h6>💡 Свет</h6><span class="lt">${esc(r.light || "—")}</span></div>
+      <div><h6>📦 Вынести на сцену</h6>${props}</div>
+      <div><h6>⚠ Особые пожелания</h6>${r.wish ? `<span class="w">${esc(r.wish)}</span>` : `<span class="none">нет</span>`}</div></div>`;
+  }
+  function propsPanel() {
+    const i = state.sel != null ? state.sel : FM.nextIdx(), p = PROGRAM[i];
+    if (!p || !p.req) return `<p class="dim">У этой позиции нет реквизитов. Выберите номер в сценарии.</p>`;
+    const r = p.req;
+    return `<div class="dim" style="margin-bottom:8px">${p.n} ${esc(p.title)} — ${esc(p.sub)}${i === FM.nextIdx() ? " · <b style='color:var(--next-fg)'>следующий</b>" : ""}</div>
+      <div class="rf">
+        <div><h6>💡 Светосценарий</h6><textarea data-f="light" data-i="${i}">${esc(r.light)}</textarea><div class="who">Отвечает: свет — Андрей</div></div>
+        <div class="pl"><h6>📦 Что вынести на сцену</h6>${r.props.map((x, k) => { const ok = done[propKey(p, k)];
+          return `<label class="${ok ? "ok" : ""}"><input type="checkbox" data-prop="${p.n}|${k}" ${ok ? "checked" : ""}><span>${esc(x)}</span></label>`; }).join("") || `<div class="dim">пока ничего</div>`}
+          <div class="add"><input id="propNew" placeholder="Добавить предмет…"><button class="btn" id="propAdd" data-i="${i}">＋</button></div><div class="who">Отвечает: сцена — Маша</div></div>
+        <div><h6>⚠ Особые пожелания</h6><textarea data-f="wish" data-i="${i}" placeholder="Выход слева, затемнение, вода на сцену…">${esc(r.wish)}</textarea></div>
+      </div>`;
+  }
+  document.addEventListener("change", (e) => {
+    const c = e.target.closest("[data-prop]"); if (!c) return;
+    done[c.dataset.prop] = c.checked; FM.store.set("e-props-done", done);
+    c.parentElement.classList.toggle("ok", c.checked);
+    renderList(); if (dr.tabs.includes("props")) renderDrawer();
+  });
+  document.addEventListener("input", (e) => {
+    const t = e.target.closest("textarea[data-f]"); if (!t) return;
+    PROGRAM[+t.dataset.i].req[t.dataset.f] = t.value;
+  });
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("#propAdd"); if (!b) return;
+    const v = $("#propNew").value.trim(); if (!v) return;
+    PROGRAM[+b.dataset.i].req.props.push(v); renderDrawer(); renderList();
+  });
+
   // ---------- нижний ящик: вкладки, Ctrl+клик — несколько рядом ----------
-  let dr = FM.store.get("e-drawer", null) || { open: true, tabs: ["quick", "requests"], h: 280 };
-  const save = () => FM.store.set("e-drawer", dr);
+  const TABS = [{ id: "props", title: "Реквизиты номера", short: "Реквизиты", icon: "🎭", key: "F7" }, ...PANELS];
+  let dr = FM.store.get("e-drawer2", null) || { open: true, tabs: ["props", "requests"], h: 280 };
+  const save = () => FM.store.set("e-drawer2", dr);
   function renderDrawer() {
     const el = $("#drawer");
     el.classList.toggle("min", !dr.open || !dr.tabs.length);
     el.style.setProperty("--drawerH", dr.h + "px");
-    $("#bar").innerHTML = PANELS.map((p) => `<button class="t ${dr.open && dr.tabs.includes(p.id) ? "on" : ""}" data-t="${p.id}" title="${p.title} · ${p.key}">${p.icon} ${p.short}${p.badge ? ` <span class="p-chip">${p.badge}</span>` : ""}</button>`).join("") +
+    $("#bar").innerHTML = TABS.map((p) => `<button class="t ${dr.open && dr.tabs.includes(p.id) ? "on" : ""}" data-t="${p.id}" title="${p.title} · ${p.key}">${p.icon} ${p.short}${p.badge ? ` <span class="p-chip">${p.badge}</span>` : ""}</button>`).join("") +
       `<span class="sp"></span><span class="hint">Ctrl+клик — несколько рядом · <kbd>\`</kbd> свернуть</span><button class="ic" id="dTog" title="Свернуть / развернуть">${dr.open ? "▾" : "▴"}</button>`;
-    $("#panes").innerHTML = dr.open ? dr.tabs.map((id) => `<div class="pane"><h5>${PANELS.find((p) => p.id === id).title}</h5>${FM.renderPanel(id)}</div>`).join("") : "";
+    $("#panes").innerHTML = dr.open ? dr.tabs.map((id) => `<div class="pane" style="${id === "props" ? "flex:2" : ""}"><h5>${TABS.find((p) => p.id === id).title}</h5>${id === "props" ? propsPanel() : FM.renderPanel(id)}</div>`).join("") : "";
     save();
   }
   function tab(id, multi) {
@@ -167,17 +255,19 @@
       const live = p.status === "live";
       html += `<div class="cr ${p.status} ${p.kind === "break" ? "brk" : ""} ${state.sel === i ? "sel" : ""}" data-i="${i}">
         <span class="i">${p.n || "·"}</span><img src="${cover(p)}" alt="">
-        <div style="min-width:0"><div class="t">${p.title}</div><div class="s">${p.sub}</div></div>
+        <div style="min-width:0"><div class="t">${p.title}</div><div class="s">${p.sub}</div>${live || p.status === "next" ? "" : chips(p)}</div>
         <span class="c dim">${p.nom || "—"}</span><span class="c">${mmss(p.dur)}</span>
         <span class="c ${live ? "bigrem" : "dim"}">${live ? "−" + mmss(p.dur - state.elapsed) : start}</span><span class="st">${st}</span>
-        ${live ? `<div class="pb"><i style="width:${(state.elapsed / p.dur) * 100}%"></i></div>` : ""}</div>`;
+        ${live ? `<div class="pb"><i style="width:${(state.elapsed / p.dur) * 100}%"></i></div>` : ""}
+        ${live || p.status === "next" ? req3(p, p.status === "next") : ""}</div>`;
     });
     $("#list").innerHTML = html;
   }
   $("#list").addEventListener("click", (e) => {
+    if (e.target.closest(".req3")) return;
     const r = e.target.closest(".cr"); if (!r) return;
     state.sel = +r.dataset.i; renderList();
-    dr.open = true; if (!dr.tabs.includes("inspector")) dr.tabs = ["inspector", ...dr.tabs].slice(0, 3); renderDrawer();
+    dr.open = true; if (!dr.tabs.includes("props")) dr.tabs = ["props", ...dr.tabs].slice(0, 3); renderDrawer();
   });
 
   // ---------- эфир ----------
@@ -193,18 +283,22 @@
     const mode = s.standby ? "standby" : !s.playing ? "" : s.paused ? "paused" : "live";
     $("#lamp").className = "lamp " + mode; $("#lamp").textContent = { live: "● В ЭФИРЕ", paused: "❚❚ ПАУЗА", standby: "▣ ЗАСТАВКА", "": "■ СТОП" }[mode];
     $("#goT").textContent = nx ? `${nx.n} ${nx.title}` : "Конец программы"; $("#goS").textContent = nx ? `${nx.sub} · ${mmss(nx.dur)}` : "";
+    const rq = nx && nx.req;
+    $("#goReq").innerHTML = rq ? `<span>💡 <b>${esc(rq.light)}</b></span>${rq.props.length ? `<span>📦 <b>${esc(rq.props.join(", "))}</b></span>` : ""}${rq.wish ? `<span class="w">⚠ ${esc(rq.wish)}</span>` : ""}` : "";
     const pg = $("#pgm"); pg.classList.toggle("on", mode === "live"); pg.classList.toggle("standby", s.standby);
     pg.querySelector("img").src = live ? cover(live) : ""; pg.querySelector(".cap").textContent = live ? `${live.n} ${live.title}` : "";
     $("#pgmTc").textContent = mmss(s.elapsed) + " / " + mmss(live ? live.dur : 0);
     const pv = $("#pvw"); pv.querySelector("img").src = nx ? cover(nx) : ""; pv.querySelector(".cap").textContent = nx ? `${nx.n} ${nx.title}` : ""; $("#pvwD").textContent = nx ? mmss(nx.dur) : "";
     $("#mV").textContent = s.master + "%"; $("#bV").textContent = s.bed + "%";
-    $("#rem").textContent = "−" + mmss(live ? live.dur - s.elapsed : 0); $("#el").textContent = mmss(s.elapsed);
+    const remS = live ? live.dur - s.elapsed : 0;
+    $("#rem").textContent = "−" + mmss(remS); $("#el").textContent = mmss(s.elapsed); $("#durL").textContent = mmss(live ? live.dur : 0);
+    $("#remBar").style.width = live ? (s.elapsed / live.dur) * 100 + "%" : "0"; $("#remBox").classList.toggle("low", remS <= 30);
     document.querySelector(".tk.play").classList.toggle("on", mode === "live");
     document.querySelector(".tk.pause").classList.toggle("on", s.paused);
     document.querySelector(".tk.standby").classList.toggle("on", s.standby);
     if (lastLive !== s.liveIdx || ++tick % 2 === 0) {
       const first = lastLive !== s.liveIdx; lastLive = s.liveIdx; renderList();
-      if (first) requestAnimationFrame(() => FM.reveal($(".cr.live"), $("#list"), "y"));
+      if (first) { requestAnimationFrame(() => FM.reveal($(".cr.live"), $("#list"), "y")); if (dr.open && dr.tabs.includes("props")) renderDrawer(); }
     }
   });
 
@@ -213,7 +307,7 @@
     KeyP: () => FM.transport("pause"), KeyN: () => FM.transport("next"), "shift+KeyS": () => FM.transport("stop"), KeyB: () => FM.transport("standby"),
     Backquote: () => { dr.open = !dr.open; renderDrawer(); },
   };
-  PANELS.forEach((p) => { keys[p.key] = () => tab(p.id, false); keys["ctrl+" + p.key] = () => tab(p.id, true); });
+  TABS.forEach((p) => { keys[p.key] = () => tab(p.id, false); keys["ctrl+" + p.key] = () => tab(p.id, true); });
   FM.QUICK.forEach((q) => (keys["Key" + q.key] = () => FM.toast(q.icon + " " + q.label + " — только макет")));
   FM.hotkeys(keys);
   renderDrawer();
