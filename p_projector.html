@@ -15,8 +15,8 @@
 html, body { margin: 0; height: 100%; background: #000; color: #e6e8ee; font: 14px/1.35 "Segoe UI", system-ui, sans-serif; overflow: hidden; }
 button, select { font: inherit; color: inherit; }
 
-.wrap { position: absolute; inset: 0 0 var(--ui, 132px) 0; display: grid; place-items: center; transition: bottom .25s; }
-body.hideui .wrap { bottom: 0; }
+body { display: flex; flex-direction: column; }
+.wrap { position: relative; flex: 1; min-height: 0; }
 .stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: var(--bg); color: var(--ink); font-family: Montserrat, "Segoe UI", sans-serif; }
 
 /* ---------- сцены ---------- */
@@ -146,24 +146,25 @@ body.tr-slide .scene:not(.on) { transform: translateX(8%); }
 canvas.fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 
 /* ---------- пульт макета ---------- */
-.ui { position: absolute; left: 0; right: 0; bottom: 0; height: 132px; background: #121318; border-top: 1px solid #2c2f39; display: grid; grid-template-columns: auto 1fr auto; gap: 18px; padding: 12px 16px; transition: transform .25s; }
-body.hideui .ui { transform: translateY(100%); }
-.ui h5 { margin: 0 0 6px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #8b90a0; }
-.row { display: flex; gap: 6px; flex-wrap: wrap; }
-.ui button.s, .ui label.l { background: #1e2027; border: 1px solid #363a45; border-radius: 7px; padding: 6px 11px; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.ui button.s kbd, .ui label.l kbd { font: 600 10px Consolas, monospace; color: #8b90a0; }
+/* Пульт экрана — отдельный блок под окном показа, не уменьшается вместе с ним. */
+.ui { flex: none; background: #121318; border-top: 1px solid #2c2f39; display: flex; flex-wrap: wrap; gap: 14px 30px; padding: 14px 18px 16px; max-height: 52vh; overflow: auto; }
+body.hideui .ui { display: none; }
+.ui .grp { min-width: 0; }
+.ui h5 { margin: 0 0 8px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #8b90a0; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.ui button.s, .ui label.l { min-height: 44px; background: #1e2027; border: 1px solid #363a45; border-radius: 9px; padding: 8px 14px; cursor: pointer; font-size: 15px; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.ui button.s kbd, .ui label.l kbd { font: 600 11px Consolas, monospace; color: #8b90a0; border: 1px solid #363a45; border-radius: 4px; padding: 0 5px; }
 .ui button.s:hover, .ui label.l:hover { border-color: #4a5060; }
 .ui button.s.on { border-color: #35e0d2; background: #16433e; color: #35e0d2; }
-.ui label.l input { accent-color: #35e0d2; margin: 0; }
-.ui label.l:has(input:checked) { border-color: #35e0d2; color: #35e0d2; }
-.ui select { background: #1e2027; border: 1px solid #363a45; border-radius: 7px; padding: 5px 8px; }
-.ui .right { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; justify-content: center; }
-.ui .right .row { justify-content: flex-end; }
-.ui .hint { font-size: 12px; color: #8b90a0; }
+.ui button.s.pri { border-color: #35e0d2; color: #35e0d2; }
+.ui label.l input { accent-color: #35e0d2; margin: 0; width: 18px; height: 18px; }
+.ui label.l:has(input:checked) { border-color: #35e0d2; color: #35e0d2; background: #16433e; }
+.ui select { background: #1e2027; border: 1px solid #363a45; border-radius: 7px; padding: 6px 8px; font-size: 15px; }
+.ui .hint { font-size: 13px; color: #8b90a0; margin-top: 8px; }
 .show { position: fixed; right: 12px; bottom: 12px; z-index: 5; background: rgba(18,19,24,.8); border: 1px solid #2c2f39; border-radius: 8px; padding: 6px 12px; cursor: pointer; display: none; }
 body.hideui .show { display: block; opacity: 0; transition: opacity .3s; }
 body.hideui .show:hover { opacity: 1; }
-@media (max-width: 1100px) { .ui { grid-template-columns: 1fr; height: auto; max-height: 50vh; overflow: auto; } .wrap { bottom: var(--ui, 300px); } }
+body.out .show { display: none !important; }
 </style>
 </head>
 <body class="tr-fade">
@@ -225,26 +226,28 @@ body.hideui .show:hover { opacity: 1; }
 </div></div>
 
 <div class="ui" id="ui">
-  <div>
+  <div class="grp">
     <h5>Сцена на экране</h5>
     <div class="row" id="scenes"></div>
   </div>
-  <div>
+  <div class="grp">
     <h5>Слои поверх</h5>
     <div class="row" id="layers"></div>
   </div>
-  <div class="right">
+  <div class="grp">
+    <h5>Настройки показа</h5>
     <div class="row">
       <label class="l">Переход <select id="trSel"><option value="fade">Растворение</option><option value="zoom">Наезд</option><option value="slide">Сдвиг</option><option value="cut">Резко</option></select></label>
       <label class="l">Эффект <select id="fxSel"><option value="none">Нет</option><option value="sparkle" selected>Искры</option><option value="snow">Снег</option><option value="confetti">Конфетти</option></select></label>
       <label class="l">Окно в окне <select id="pipPos"><option value="br">справа внизу</option><option value="tr">справа вверху</option><option value="bl">слева внизу</option><option value="tl">слева вверху</option></select></label>
     </div>
     <div class="row">
+      <button class="s pri" id="popout" title="Отдельное окно — его выводят на проектор">↗ Окно показа</button>
       <button class="s" id="demo">▶ Автопоказ</button>
       <button class="s" id="full" title="F">⛶ На весь экран <kbd>F</kbd></button>
       <button class="s" id="hide" title="H">Скрыть пульт <kbd>H</kbd></button>
     </div>
-    <div class="hint">Это макет того, что видит зал. Цифры 1–7 — сцены, Q W E R T Y U — слои.</div>
+    <div class="hint" style="margin-top:10px">«Окно показа» открывает чистый экран без кнопок — его тащат на проектор, а этот пульт остаётся у оператора. Цифры 1–7 — сцены, Q W E R T Y U — слои.</div>
   </div>
 </div>
 <button class="show" id="showUi">Показать пульт (H)</button>
@@ -325,7 +328,10 @@ body.hideui .show:hover { opacity: 1; }
     { id: "qr", t: "QR в углу", k: "R" }, { id: "pip", t: "Окно в окне", k: "T" }, { id: "vign", t: "Виньетка", k: "Y" }, { id: "safe", t: "Безопасная зона", k: "U" },
   ];
   let ui = FM.store.get("p-ui", null) || { scene: "number", layers: { bug: true }, tr: "fade", fx: "sparkle", pip: "br" };
-  const save = () => FM.store.set("p-ui", ui);
+  const params = new URLSearchParams(location.search);
+  const OUT = params.has("show");   // окно показа: без кнопок, слушает пульт
+  const bc = "BroadcastChannel" in window ? new BroadcastChannel("festmon-projector") : null;
+  const save = () => { FM.store.set("p-ui", ui); if (bc && !OUT) bc.postMessage(ui); };
   $("#scenes").innerHTML = SCENES.map((s, i) => `<button class="s" data-scene="${s.id}">${s.i} ${s.t} <kbd>${i + 1}</kbd></button>`).join("");
   $("#layers").innerHTML = LAYERS.map((l) => `<label class="l"><input type="checkbox" data-layer="${l.id}">${l.t} <kbd>${l.k}</kbd></label>`).join("");
 
@@ -394,7 +400,12 @@ body.hideui .show:hover { opacity: 1; }
   requestAnimationFrame(frame);
 
   // В превью презентации пульт не нужен — показываем «как в зале» с автопоказом.
-  if (new URLSearchParams(location.search).has("show")) { document.body.classList.add("hideui"); $("#demo").click(); }
+  if (OUT) {
+    document.body.classList.add("hideui", "out");
+    if (bc) bc.onmessage = (e) => { ui = e.data; apply(); };
+    if (params.has("demo")) $("#demo").click();
+  }
+  $("#popout").onclick = () => { window.open("p_projector.html?show", "festmon-show", "width=1280,height=720"); setTimeout(save, 600); };
   drawQR(); apply(); fit();
 })();
 </script>
